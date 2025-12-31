@@ -1,0 +1,5 @@
+# App permission for record_acknowledgement
+[[permission]]
+identifier = "allow-record-acknowledgement"
+description = "Enables the record_acknowledgement command without any pre-configured scope."
+commands.allow = ["record_acknowledgement"]

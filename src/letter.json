@@ -1,0 +1,19 @@
+{
+  "defaultUserName": "Friend",
+  "title": "Acknowledgement Letter",
+  "body": [
+    "This letter is a clear agreement between you and the work you said you would do. It exists to remove debate, reduce friction, and make the next step obvious.",
+    "You are opening this app because you asked for structure. The point is not punishment. The point is that the work matters enough to be protected from avoidance and drift.",
+    "Read this fully. Sit with it. The seconds you spend here are the cost of entry for the hours you are about to invest in focused effort.",
+    "You do not need more motivation. You need a small, repeatable routine that starts the day the same way: read, acknowledge, begin.",
+    "If you are tempted to close this early, treat that impulse as the exact reason this exists. The friction is the feature, not the bug.",
+    "Focus is earned in the first few minutes. When you finish this letter, you are committing to a specific task, a specific window of time, and the patience to see it through.",
+    "Do the smallest meaningful unit of work next. Do not over design your plan. Act, then iterate once you are already in motion.",
+    "There is no penalty for slow progress, only for no progress. Start now, even if it feels imperfect.",
+    "By acknowledging below, you confirm that you have read this letter in full and accept the responsibility to proceed with focus and integrity.",
+    "When you close this app, you are not done. You are just starting. Move directly into your work with no detours."
+  ],
+  "closing": "I have read this letter in full and I acknowledge it.",
+  "acknowledgementPrompt": "Type the acknowledgement to continue:",
+  "acknowledgementText": "I acknowledge that I will begin now."
+}

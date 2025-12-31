@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Acknowledgement App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="module" src="./main.js" defer></script>
+  </head>
+  <body class="intro-active">
+    <div class="intro" id="intro" aria-hidden="true">
+      <div class="intro-circle" aria-hidden="true"></div>
+      <p class="intro-greeting" id="intro-greeting"></p>
+    </div>
+    <main class="shell">
+      <button class="edit-toggle" id="edit-toggle" type="button">Edit</button>
+      <header class="header">
+        <p class="kicker">Acknowledgement App</p>
+        <h1>Read the letter in full</h1>
+        <p class="subtitle">Scroll to the end, then type the acknowledgement.</p>
+      </header>
+
+      <section class="letter" id="letter" aria-label="Acknowledgement letter" tabindex="0">
+        <h2 id="letter-title">Loading...</h2>
+        <div class="letter-content" id="letter-content"></div>
+      </section>
+
+      <section class="confirm" aria-label="Acknowledgement confirmation">
+        <p class="confirm-prompt" id="ack-prompt"></p>
+        <p class="ack-phrase" id="ack-phrase"></p>
+        <input
+          id="ack-input"
+          type="text"
+          placeholder="Type the acknowledgement"
+          autocomplete="off"
+          autocapitalize="none"
+          autocorrect="off"
+          spellcheck="false"
+        />
+      </section>
+
+      <footer class="actions">
+        <button id="acknowledge" type="button" disabled>Acknowledge</button>
+        <p id="status">Scroll to the bottom to enable the button.</p>
+      </footer>
+    </main>
+
+    <section class="editor" id="editor" aria-hidden="true">
+      <div class="editor-card" role="dialog" aria-labelledby="editor-title">
+        <header class="editor-header">
+          <div>
+            <p class="editor-kicker">Settings</p>
+            <h2 id="editor-title">Edit acknowledgement content</h2>
+          </div>
+          <button class="editor-close" id="editor-close" type="button">Close</button>
+        </header>
+
+        <div class="editor-fields">
+          <label class="editor-field">
+            <span>Name</span>
+            <input id="edit-name" type="text" placeholder="Your name" autocomplete="off" />
+          </label>
+
+          <label class="editor-field">
+            <span>Letter title</span>
+            <input id="edit-title" type="text" placeholder="Acknowledgement Letter" autocomplete="off" />
+          </label>
+
+          <label class="editor-field">
+            <span>Letter body (separate paragraphs with a blank line)</span>
+            <textarea id="edit-body" rows="10" placeholder="Write the letter here."></textarea>
+          </label>
+
+          <label class="editor-field">
+            <span>Letter closing</span>
+            <input id="edit-closing" type="text" placeholder="Closing line" autocomplete="off" />
+          </label>
+
+          <label class="editor-field">
+            <span>Acknowledgement prompt</span>
+            <input id="edit-ack-prompt" type="text" placeholder="Type the acknowledgement to continue:" autocomplete="off" />
+          </label>
+
+          <label class="editor-field">
+            <span>Acknowledgement text</span>
+            <input id="edit-ack-text" type="text" placeholder="I acknowledge that I will begin now." autocomplete="off" />
+          </label>
+        </div>
+
+        <footer class="editor-actions">
+          <button class="editor-secondary" id="editor-reset" type="button">Reset</button>
+          <div class="editor-actions-right">
+            <button class="editor-secondary" id="editor-cancel" type="button">Cancel</button>
+            <button class="editor-primary" id="editor-save" type="button">Save</button>
+          </div>
+        </footer>
+      </div>
+    </section>
+  </body>
+</html>
