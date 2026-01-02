@@ -22,6 +22,16 @@ It is not motivation or productivity hacks. It is a quiet constraint that keeps 
 
 **A single screen. No escape. Until acknowledgement.**
 
+## Download
+
+**v0.1.0 is now available for Windows!**
+
+Download the first release here: [https://github.com/Clupai8o0/acknowledgement-force/releases/tag/v0.1.0](https://github.com/Clupai8o0/acknowledgement-force/releases/tag/v0.1.0)
+
+Choose between:
+- MSI Installer (recommended for enterprise/IT)
+- NSIS Installer (standard setup)
+
 ## Project Status
 
 **v0.1 - Prototype Phase**
