@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Acknowledgement App",
-  "version": "0.1.0",
-  "identifier": "com.clupa.acknowledgement-app",
+  "productName": "Acknowledgement Force",
+  "version": "0.2.0",
+  "identifier": "com.clupa.acknowledgement-force",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -13,16 +13,16 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "Acknowledgement App",
-        "width": 1200,
-        "height": 800,
-        "fullscreen": true,
-        "resizable": false,
-        "alwaysOnTop": true,
-        "minimizable": false,
-        "maximizable": false,
+        "title": "Acknowledgement Force",
+        "width": 1400,
+        "height": 900,
+        "fullscreen": false,
+        "resizable": true,
+        "alwaysOnTop": false,
+        "minimizable": true,
+        "maximizable": true,
         "closable": false,
-        "decorations": false
+        "decorations": true
       }
     ],
     "security": {

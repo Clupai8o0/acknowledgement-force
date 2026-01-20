@@ -17,7 +17,7 @@ fn ensure_autostart(app: &AppHandle) -> Result<(), String> {
     std::fs::create_dir_all(&startup_dir).map_err(|err| err.to_string())?;
 
     let exe_path = tauri::process::current_binary(&app.env()).map_err(|err| err.to_string())?;
-    let script_path = startup_dir.join("AcknowledgementAppStartup.cmd");
+    let script_path = startup_dir.join("AcknowledgementForceStartup.cmd");
 
     if script_path.exists() {
         return Ok(());
