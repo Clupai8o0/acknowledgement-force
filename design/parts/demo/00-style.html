@@ -1,0 +1,606 @@
+<title>Force — the desktop demo</title>
+
+<style>
+@font-face{font-family:Fraunces;src:url(data:font/woff2;base64,__FRAUNCES__) format('woff2');font-weight:100 900;font-style:normal;font-display:block}
+@font-face{font-family:Fraunces;src:url(data:font/woff2;base64,__FRAUNCES_IT__) format('woff2');font-weight:100 900;font-style:italic;font-display:block}
+@font-face{font-family:Inter;src:url(data:font/woff2;base64,__INTER__) format('woff2');font-weight:100 900;font-style:normal;font-display:block}
+
+:root{
+  /* Ash — D19, the ten tokens verbatim. Nothing else is a colour in the app. */
+  --bg:#101112; --bg2:#191B1D;
+  --ink:#EDEAE4; --ink2:#A8AEB3; --ink3:#7E858B;
+  --kept:#EDEAE4; --broken:#8A7566; --unsettled:#5A6066;
+  --accent:#B4553A; --rule:#2B2F33;
+  /* demo chrome — deliberately NOT the app palette, so the app never has to
+     share a colour with the thing driving it */
+  --page:#08090A; --panel:#0E1011; --line:#191C1F; --line2:#252A2E;
+  --chi:#DCE0E4; --cmid:#9AA1A7; --clo:#6E757B;
+  --barh:84px;
+  /* the display behind a window. Not a Force colour, because it isn't Force. */
+  --desk:#050506;
+}
+/* Force is dark-only. DESIGN.md lists a light theme as undecided, and rendering
+   Ash on a white ground would misrepresent it — so this commits to one world in
+   both OS themes. A choice, not an omission. */
+:root[data-theme="light"],:root[data-theme="dark"]{color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--desk);color:var(--ink2);overflow:hidden;
+  font-family:Inter,system-ui,sans-serif;font-variation-settings:'wght' 400,'opsz' 17;
+  font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility}
+::selection{background:#2A3036;color:var(--chi)}
+button{font:inherit;color:inherit}
+
+/* ═══════════════════════ the machine ═══════════════════════ */
+#stage{position:fixed;inset:0 0 var(--barh) 0;overflow:hidden;background:var(--desk);
+  transition:right .3s cubic-bezier(.16,1,.3,1)}
+body.notes #stage{right:min(450px,42vw)}
+body.nobar #stage{bottom:0}
+.scene{position:absolute;inset:0;display:none;align-items:center;justify-content:center}
+.scene.on{display:flex}
+
+/* ── moving between screens ───────────────────────────────────────────────
+   NOT in the record: FORCE-V2 says nothing about how one surface replaces
+   another, so this is a proposal. Two rules shaped it.
+
+   It travels in the direction you asked for. Forward, the screen you left
+   drifts up and out and the new one arrives from below; backward, both
+   reverse. A crossfade with no direction is the same motion whichever way you
+   press, which is worse than none.
+
+   And it does NOT blur. Diffusion is the Ink Bloom's alone — it is the one
+   moment in the product where something resolves out of nothing, and a page
+   transition that also blurs spends that. So the transition is the two
+   cheapest properties there are, opacity and eight pixels of travel, on the
+   house curve. The bloom starts as the screen arrives, so the sentence is
+   still a haze while the surface settles under it. */
+@keyframes sceneIn{from{opacity:0;transform:translateY(var(--dy,10px))}
+  to{opacity:1;transform:none}}
+@keyframes sceneOut{from{opacity:1;transform:none}
+  to{opacity:0;transform:translateY(var(--dy,-8px))}}
+.scene.on.arriving{animation:sceneIn 330ms cubic-bezier(.16,1,.3,1) 90ms both}
+/* the outgoing screen leaves on an ease-IN — it accelerates away, where the
+   arriving one decelerates in. Same curve on both directions reads as a
+   dissolve; opposite curves read as one thing replacing another. */
+.scene.leaving{display:flex;pointer-events:none;z-index:3;
+  animation:sceneOut 190ms cubic-bezier(.45,0,.9,1) both}
+/* The outgoing screen sits ON TOP while it fades, in both directions. Scene
+   order in the DOM would otherwise decide it — the new screen would come over
+   the old one going forward and under it going back, which is two different
+   transitions wearing the same name. */
+
+/* ── stagger ──────────────────────────────────────────────────────────────
+   Only where the ORDER is information. A record strip is twenty-eight days in
+   sequence, a candidate list is three offers made one at a time, a week of
+   testimony is a week — those arrive in their own order because that order is
+   what they mean. A heading and a paragraph are not a sequence, and a claim is
+   emphatically not one: D20 rejected per-word stagger with its reasoning, and
+   the sentence still arrives whole.
+
+   The step scales with how often you see the screen. The gate's seven marks
+   step at 22ms — 154ms, under the threshold where you would call it a wait —
+   and the day-28 review's twenty-eight step slower, because you sat down for
+   that one. D23's rule about length, applied to time. */
+@keyframes stagIn{from{opacity:0;transform:translateY(var(--sy,8px))}
+  to{opacity:1;transform:none}}
+.stag{animation:stagIn var(--arrive) var(--ease-arrive) both}
+
+/* a state change inside one screen is not a new page — the screen rearranges,
+   so only the blocks that actually appear are animated, and they arrive the
+   same way the page does */
+@keyframes swapIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+.swapin{animation:swapIn 460ms var(--ease-arrive) both}
+
+/* Four surfaces, and the difference between them is load-bearing.
+   `panel`  — the evening gate. A borderless non-activating NSPanel at
+              screen-saver level (D18). No title bar, no traffic lights, no
+              rounded corners: drawing chrome on it would be a lie about the
+              window, and it covers the display edge to edge.
+   `window` — a maximised app window: the reviews, the record, settings.
+   `float`  — a small window sitting on your display, which is what the morning
+              beat and the night-one ceremony actually are.
+   `web`    — a browser tab (D14: no endpoint here can settle a day). */
+.frame{position:relative;background:var(--bg);display:flex;flex-direction:column;
+  overflow:hidden}
+[data-surface=panel] .frame{width:100%;height:100%}
+[data-surface=window] .frame{width:100%;height:100%}
+[data-surface=web] .frame{width:100%;height:100%}
+/* Capped against the STAGE, not the viewport. `86vh` looked right and was
+   wrong: the stage is the viewport minus the demo bar, so a window sized in vh
+   could be taller than the space it sits in — and a centred item that does not
+   fit overflows BOTH edges, which quietly ate the title bar. */
+[data-surface=float] .frame{width:min(var(--fw,1080px),calc(100% - 60px));
+  height:min(var(--fh,720px),calc(100% - 30px));
+  border-radius:12px;box-shadow:0 0 0 1px #202427,0 40px 90px -26px #000,0 6px 20px -6px #000}
+[data-surface=none] .frame{background:none;box-shadow:none}
+
+.tbar{height:38px;flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:0 16px;
+  background:#141618;border-bottom:1px solid var(--rule)}
+.tbar i{width:11px;height:11px;border-radius:50%;background:#2E3236}
+.tbar span{margin-left:14px;font-size:15px;color:var(--ink3);letter-spacing:.05em;
+  font-variation-settings:'wght' 500,'opsz' 14}
+.urlb{height:46px;flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:0 16px;
+  background:#141618;border-bottom:1px solid var(--rule)}
+.urlb i{width:11px;height:11px;border-radius:50%;background:#2E3236}
+.urlb u{flex:1;max-width:540px;margin-left:12px;background:#0C0E0F;text-decoration:none;
+  border:1px solid var(--rule);border-radius:6px;height:28px;display:flex;align-items:center;
+  padding:0 12px;font-size:15px;color:var(--ink3);letter-spacing:.02em}
+
+.pane{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;
+  padding:clamp(30px,4.2vh,56px) clamp(34px,4.6vw,90px) clamp(24px,3.2vh,42px)}
+.pane.raw{padding:0}
+.pane.scroll{overflow-y:auto;overscroll-behavior:contain}
+/* one column, centred, so a 1600px display does not turn a sentence into a
+   headline the width of a road */
+.col{width:100%;max-width:var(--cw,960px);margin:0 auto;display:flex;flex-direction:column;
+  flex:1;min-height:0}
+.pane.scroll .col{flex:0 0 auto;min-height:100%}
+/* a spacer's minimum is a nicety; on a short display it is the last thing
+   worth keeping, and the first thing that pushes a line off the bottom */
+.grow{flex:1;min-height:var(--gmin,0)}
+
+/* ═══════════════════════ app type ═══════════════════════
+   Every size here is at or above D17's floor at the smallest viewport this
+   demo runs at. Nothing shrinks to fit a composition — if a composition needs
+   smaller type, the composition changes. */
+.claim{font-family:Fraunces,Georgia,serif;color:var(--ink);margin:0;
+  font-size:clamp(32px,min(3.6vw,5.7vh),48px);font-variation-settings:'wght' 430,'opsz' 48;
+  letter-spacing:-.022em;line-height:1.26}
+.claim.sm{font-size:clamp(26px,min(2.7vw,4.6vh),35px);font-variation-settings:'wght' 430,'opsz' 35;
+  letter-spacing:-.016em}
+.claim.xs{font-size:clamp(21px,min(2.1vw,3.75vh),27px);font-variation-settings:'wght' 430,'opsz' 27;
+  letter-spacing:-.01em;line-height:1.32}
+.title{font-family:Fraunces,Georgia,serif;color:var(--ink);margin:0;
+  font-size:clamp(25px,min(2.6vw,4.5vh),34px);font-variation-settings:'wght' 430,'opsz' 34;
+  letter-spacing:-.012em;line-height:1.22;text-wrap:balance}
+.closing{font-family:Fraunces,Georgia,serif;color:var(--ink);margin:0;
+  font-size:clamp(26px,min(2.8vw,4.6vh),36px);font-variation-settings:'wght' 400,'opsz' 36;
+  line-height:1.28;letter-spacing:-.012em;text-wrap:balance}
+.numeral{font-family:Fraunces,Georgia,serif;color:var(--ink);margin:0;
+  font-size:clamp(42px,min(4.2vw,7.5vh),58px);font-variation-settings:'wght' 400,'opsz' 58;
+  font-variant-numeric:tabular-nums;line-height:1}
+.eyebrow{font-size:15px;letter-spacing:2.4px;text-transform:uppercase;color:var(--ink3);
+  font-variation-settings:'wght' 500,'opsz' 15;display:inline-block}
+.body{font-size:clamp(17px,1.2vw,19px);color:var(--ink2);margin:0;line-height:1.58}
+.supp{font-size:clamp(16px,1.12vw,18px);color:var(--ink2);margin:0;line-height:1.56}
+.quiet{font-size:clamp(15px,1.02vw,16px);color:var(--ink3);margin:0;line-height:1.55}
+.said{font-size:clamp(17px,1.18vw,19px);color:var(--ink2);margin:0;line-height:1.58}
+.num{font-variant-numeric:tabular-nums}
+/* The hairlines are gone. A rule between every section is the single most
+   generic move in the vocabulary — it is what a layout does when it has not
+   decided what belongs together. Whitespace and the tracked labels do that job,
+   and they do it without drawing anything. These elements survive as pure
+   space, so the vertical rhythm they were carrying survives with them. */
+hr.r{border:none;margin:0;width:100%;height:0}
+
+/* the emphasis mark — D19's single chromatic use, on the falsifiable half */
+.emph{position:relative;font-style:italic;font-family:Fraunces,Georgia,serif;
+  font-variation-settings:inherit;white-space:nowrap}
+.emph::after{content:"";position:absolute;left:0;right:0;bottom:-.15em;height:.05em;
+  min-height:2px;background:var(--accent);transform:scaleX(0);
+  transform-origin:left center;border-radius:1px}
+.emph.drawn::after{transform:scaleX(1);transition:transform .72s cubic-bezier(.16,1,.3,1)}
+/* retracts right-to-left when the pointer moves elsewhere, so it visibly
+   travels rather than teleporting */
+.emph:not(.drawn)::after{transform-origin:right center;
+  transition:transform .34s cubic-bezier(.55,0,1,.45)}
+.ital{font-style:italic;font-family:Fraunces,Georgia,serif}
+
+/* ═══════════ what the app is allowed to mark ═══════════
+   PROPOSED — COPY.md sets the voice but says nothing about typography inside a
+   sentence, so this is a proposal.
+
+   The rule it follows is Principle 3: every sentence the app says is either a
+   count from your record or a consequence you can check. So the marks separate
+   exactly that — the record's own facts sit in `ink`, the app's connective
+   prose stays `ink2`, and the difference is visible without reading a word.
+   That is why a wall of Counsel prose read as a wall: nothing on it told you
+   which parts were yours.
+
+   No mark introduces a colour. `accent` still has its one use. */
+.f{color:var(--ink);font-variation-settings:'wght' 520,'opsz' 19;
+  font-variant-numeric:tabular-nums}          /* a fact out of the record */
+.q{font-style:italic;font-family:Fraunces,Georgia,serif;color:var(--ink2)}  /* your words */
+.st{color:var(--ink);font-variation-settings:'wght' 560,'opsz' 19}          /* load-bearing */
+.sk{text-decoration:line-through;text-decoration-thickness:1px;
+  text-decoration-color:var(--unsettled);color:var(--ink3)}                 /* superseded */
+.uu{border-bottom:1px solid var(--ink3);padding-bottom:1.5px}               /* a named term */
+.hl{background:var(--bg2);border-radius:3px;padding:1.5px 6px;margin:0 -2px;
+  color:var(--ink);box-decoration-break:clone;-webkit-box-decoration-break:clone}
+/* the gate is one screen in three states, so the claim does not reload between
+   them — it recedes. While you are speaking it is context, not the subject. */
+[data-scene=gate] [data-claim]{transition:font-size .42s cubic-bezier(.16,1,.3,1),
+  color .42s cubic-bezier(.16,1,.3,1),margin .42s cubic-bezier(.16,1,.3,1)}
+[data-scene=gate][data-state=speak] [data-claim]{font-size:clamp(23px,2.2vw,30px);
+  font-variation-settings:'wght' 430,'opsz' 30;color:var(--ink2);
+  margin-top:clamp(20px,2.6vh,28px)}
+
+/* ═══════════════════════ Ink Bloom ═══════════════════════
+   The fill stays transparent the whole way through. The text is ONLY its own
+   zero-offset shadow, so at blur 0 the shadow IS the glyph — the technique
+   DESIGN.md prescribes over ImageFiltered(blur), which costs a saveLayer per
+   element. The fill must never fade in alongside the blur or you get a glow.
+
+   Driven per-frame from JS rather than by CSS keyframes, for one reason: the
+   shape of the curve is the thing under review, and a tuner cannot reshape a
+   keyframe list. Every parameter is live in the Bloom panel. */
+.bloom{color:transparent}
+.bloom .emph{color:inherit}
+.bloom.settled{color:var(--ink);text-shadow:none;opacity:1}
+/* the caret has to be told separately — `color` is transparent in the one field
+   the user is meant to type in */
+.editable{outline:none;border-bottom:1px solid transparent;caret-color:var(--ink);
+  transition:border-color .22s}
+.editable:hover{border-bottom-color:var(--rule)}
+.editable:focus{border-bottom-color:var(--ink3)}
+
+/* Everything that is not the sentence arrives quietly, and after it — at the
+   SAME pace and on the SAME curve. The bloom is a smoothstep resolve over most
+   of a second; the entrances used to be a 420ms expo-out, which is a different
+   motion in every way that reads: three times quicker, and a jump-then-settle
+   where the sentence is a slow build. Two languages on one screen.
+   `--ease-in-out` is smoothstep's shape as a bezier, so a mark arriving and a
+   sentence resolving now move the same way. */
+:root{--arrive:620ms;--ease-arrive:cubic-bezier(.45,0,.55,1)}
+.rise{opacity:0;transform:translateY(5px)}
+.rise.up{opacity:1;transform:none;
+  transition:opacity var(--arrive) var(--ease-arrive),transform var(--arrive) var(--ease-arrive)}
+
+/* ═══════════════════════ controls ═══════════════════════ */
+.hold{display:inline-flex;flex-direction:column;align-items:center;gap:15px;background:none;
+  border:none;cursor:pointer;padding:0;color:inherit;-webkit-user-select:none;
+  user-select:none;touch-action:none}
+.hold .cap{font-size:16px;letter-spacing:2.6px;text-transform:uppercase;color:var(--ink2);
+  font-variation-settings:'wght' 560,'opsz' 16;margin:0}
+.hold:focus-visible{outline:2px solid var(--ink3);outline-offset:10px;border-radius:6px}
+.linec{display:block}
+.btn{background:none;border:1px solid var(--rule);border-radius:4px;color:var(--ink2);
+  font-size:16px;letter-spacing:2.4px;text-transform:uppercase;
+  font-variation-settings:'wght' 560,'opsz' 16;padding:12px 24px;cursor:pointer;
+  transition:color .18s,border-color .18s}
+.btn:hover{color:var(--ink);border-color:#3B4247}
+.btn:focus-visible{outline:2px solid var(--ink3);outline-offset:3px}
+.btn.plain{border:none;padding:12px 8px;text-transform:none;letter-spacing:0;font-size:18px;
+  font-variation-settings:'wght' 400,'opsz' 18;color:var(--ink3)}
+.btn.plain:hover{color:var(--ink2)}
+.field{background:var(--bg2);border:1px solid var(--rule);border-radius:5px;padding:18px 22px;
+  color:var(--ink);width:100%}
+
+/* candidate rows — hover, focus, pick */
+.cands{display:flex;flex-direction:column;gap:5px;width:100%}
+.cand{background:none;border-radius:7px;padding:clamp(15px,2vh,22px) clamp(16px,1.8vw,22px);
+  cursor:pointer;border:none;width:100%;text-align:left;display:block;position:relative;
+  transition:background-color .22s cubic-bezier(.16,1,.3,1)}
+.cand:hover{background:#141517}
+.cand:focus-visible{outline:2px solid var(--ink3);outline-offset:-2px}
+.cand.on{background:var(--bg2)}
+.cand .attr{transition:color .22s}
+.cand.on .attr{color:var(--ink2)}
+/* a plain list — read, never answered. No verdict, no strip, no gate. Spacing
+   is the only thing holding the items apart. */
+.rows{display:flex;flex-direction:column;gap:clamp(19px,2.7vh,28px);width:100%}
+
+/* ═══════════════════════ the record strip ═══════════════════════ */
+.strip{display:flex;gap:0;align-items:flex-end}
+.strip .d{display:flex;flex-direction:column;align-items:center;gap:10px;width:46px}
+.strip.wide .d{width:32px}
+.strip .m{width:12px;height:12px;border-radius:50%;background:transparent}
+.strip .m.kept{background:var(--kept)}
+.strip .m.broken{background:var(--broken)}
+.strip .m.unsettled{background:none;box-shadow:inset 0 0 0 1.7px var(--unsettled)}
+.strip .m.none{box-shadow:inset 0 0 0 1px var(--rule)}
+.strip .dl{font-size:15px;color:var(--ink3);font-variation-settings:'wght' 450,'opsz' 15;
+  letter-spacing:.02em}
+.strip .d.today .dl{color:var(--ink2)}
+.strip .d.today .m{width:14px;height:14px}
+
+/* engraving — recoloured through its own luminance as a mask, never shipped as
+   pixels of its own colour */
+.eng{background-color:var(--ink3);-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  -webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center;mask-position:center}
+.eng.tally{-webkit-mask-image:url(data:image/webp;base64,__MASK_TALLY__);
+  mask-image:url(data:image/webp;base64,__MASK_TALLY__)}
+.eng.hand{-webkit-mask-image:url(data:image/webp;base64,__MASK_HAND__);
+  mask-image:url(data:image/webp;base64,__MASK_HAND__)}
+
+/* ═══════════════════════ the commit flood ═══════════════════════
+   PROPOSED — this amends D19, which gives `accent` one use, and DESIGN.md
+   closes the list in as many words. See the Notes drawer on that screen.
+   An accent circle grows out of the ring under your thumb until it has taken
+   the window, then drops to the ground as the word arrives. */
+.flood{position:absolute;border-radius:50%;background:var(--accent);transform:scale(0);
+  pointer-events:none;z-index:2;will-change:transform}
+.flood.done{background:var(--bg);transition:background-color .56s cubic-bezier(.16,1,.3,1)}
+.floodmsg{position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:22px;opacity:0;pointer-events:none;
+  transition:opacity .3s}
+.floodmsg.in{opacity:1}
+.floodmsg .sub{opacity:0;transform:translateY(6px);
+  transition:opacity .5s cubic-bezier(.16,1,.3,1) .55s,transform .5s cubic-bezier(.16,1,.3,1) .55s}
+.floodmsg.in .sub{opacity:1;transform:none}
+/* Two copies of the screen, pixel-aligned: the normal one, and the same words
+   in `bg` clipped to exactly the circle the flood has reached. The sentence
+   turns over as the colour arrives rather than being covered by it. */
+.stk{position:absolute;inset:0;display:flex;flex-direction:column;
+  padding:clamp(30px,4.2vh,56px) clamp(34px,4.6vw,90px) clamp(24px,3.2vh,42px)}
+.stk.inv{z-index:3;color:var(--bg);pointer-events:none;
+  -webkit-clip-path:circle(0px at 50% 70%);clip-path:circle(0px at 50% 70%)}
+.stk.inv .claim,.stk.inv .body,.stk.inv .eyebrow{color:var(--bg);text-shadow:none}
+.stk.inv .emph::after{background:var(--bg);transform:scaleX(0)}
+.stk.inv.gone{opacity:0;transition:opacity .38s cubic-bezier(.16,1,.3,1)}
+.committing{font-size:16px;letter-spacing:2.6px;text-transform:uppercase;color:var(--bg);
+  font-variation-settings:'wght' 620,'opsz' 16}
+
+/* ═══════════════════════ going back ═══════════════════════
+   PROPOSED, and it needs to be a numbered decision because the rule it implies
+   is load-bearing: EVERYTHING BEFORE A COMMITMENT IS REVERSIBLE, THE
+   COMMITMENT IS NOT, AND THE SCREEN SAYS WHICH IT IS.
+
+   Force asks for exactly one irreversible act — 28 days on one sentence (D4) —
+   and it can only ask for that honestly if every step leading up to it is
+   cheap. You can say more, pick a different sentence, re-record, re-say, and
+   take back a "not tonight". You cannot un-commit, and the one screen where
+   that is true is the one screen with no way back on it. */
+.back{position:absolute;top:clamp(10px,1.6vh,20px);left:clamp(14px,1.9vw,32px);z-index:6;
+  display:inline-flex;align-items:center;gap:9px;background:none;border:none;
+  padding:6px 10px;margin-left:-10px;border-radius:5px;color:var(--ink3);font-size:16px;
+  cursor:pointer;transition:color .18s,background-color .18s}
+.back:hover{color:var(--ink);background:var(--bg2)}
+.back:focus-visible{outline:2px solid var(--ink3);outline-offset:2px}
+.back .g{font-size:18px;line-height:1;margin-top:-2px}
+/* While the ring is filling, the way out is to let go — the copy under your
+   thumb says so. A second exit floating on top of the colour would be two
+   answers to the same question, and `ink3` on `accent` is not legible anyway. */
+.committing-now .back{opacity:0;pointer-events:none;transition:opacity .2s}
+[data-hasback] > .pane{padding-top:calc(clamp(30px,4.2vh,56px) + 28px)}
+
+/* the undo that protects the record: a settled day is not written until the
+   panel actually goes, and for those few seconds you can take it back */
+.undo{background:none;border:none;padding:4px 9px;margin-left:10px;border-radius:4px;
+  color:var(--ink3);font-size:16px;cursor:pointer;opacity:0;pointer-events:none;
+  transition:opacity .3s,color .18s,background-color .18s}
+.undo.on{opacity:1;pointer-events:auto}
+.undo:hover{color:var(--ink);background:var(--bg2)}
+/* said while the ring is filling: the way out is to stop doing the thing */
+.letgo{opacity:0;transition:opacity .3s}
+.letgo.on{opacity:1}
+
+/* ═══════════════════════ the settle ═══════════════════════ */
+.settle{position:relative;width:100%;height:clamp(210px,27vh,290px);touch-action:none;
+  -webkit-user-select:none;user-select:none}
+.tgt{position:absolute;top:50%;transform:translateY(-50%);width:clamp(148px,13vw,182px);
+  height:clamp(148px,13vw,182px);border-radius:50%;display:flex;align-items:center;
+  justify-content:center;box-shadow:inset 0 0 0 1px var(--rule);
+  transition:box-shadow .2s,background-color .2s}
+.tgt[data-tgt=kept]{left:clamp(0px,4vw,70px)}
+.tgt[data-tgt=broken]{right:clamp(0px,4vw,70px)}
+.tgt .tw{font-size:16px;letter-spacing:2.6px;text-transform:uppercase;color:var(--ink3);
+  font-variation-settings:'wght' 560,'opsz' 16}
+.tgt.hot{box-shadow:inset 0 0 0 1px #454C52;background:#141618}
+.tgt.hot .tw{color:var(--ink2)}
+.mark{position:absolute;width:34px;height:34px;border-radius:50%;background:var(--ink);
+  left:0;top:0;cursor:grab}
+.mark:active{cursor:grabbing}
+.mark.is-broken{background:var(--broken)}
+.mark.committed{transition:opacity .28s;opacity:0}
+.settle .hint{position:absolute;left:0;right:0;bottom:-8px;text-align:center;font-size:16px;
+  color:var(--ink3);margin:0;transition:opacity .2s}
+
+/* ═══════════════════════ misc app furniture ═══════════════════════ */
+.toggle{width:48px;height:28px;border-radius:14px;box-shadow:inset 0 0 0 1px var(--rule);
+  flex:0 0 auto;position:relative}
+.toggle i{position:absolute;left:4px;top:4px;width:20px;height:20px;border-radius:50%;
+  background:var(--ink3)}
+.plate{background:var(--bg2);border-radius:6px;
+  padding:clamp(17px,2.1vh,23px) clamp(19px,1.9vw,25px)}
+.tbl{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+.tbl td{padding:9px 16px 9px 0;vertical-align:top}
+.side{background:var(--bg2);overflow-y:auto;
+  padding:clamp(26px,3.4vh,40px) clamp(24px,2.4vw,34px)}
+
+/* ═══════════════════════ demo chrome ═══════════════════════
+   Page tokens only. The chrome never borrows a colour from the app, so no pixel
+   of #B4553A outside a product screen can be blamed on the driver. */
+#bar{position:fixed;left:0;right:0;bottom:0;height:var(--barh);z-index:40;background:var(--page);
+  border-top:1px solid var(--line);display:flex;flex-direction:column;
+  font-size:15px;color:var(--clo);transition:transform .28s cubic-bezier(.16,1,.3,1)}
+body.nobar #bar{transform:translateY(100%)}
+#prog{position:absolute;left:0;top:-1px;height:1px;background:#3A4247;
+  transition:width .3s cubic-bezier(.16,1,.3,1)}
+
+/* Row one is where you are in the product; row two is where you are in the
+   walk. Two rows because one was not enough to hold both without the sentence
+   that tells you what to do being cut in half. */
+#rail{height:37px;flex:0 0 auto;display:flex;align-items:stretch;justify-content:space-between;
+  gap:16px;padding:0 12px 0 8px;background:#0B0C0E}
+#acts-rail{display:flex;align-items:stretch;min-width:0;overflow:hidden}
+.act{background:none;border:none;padding:0 12px;font-size:14px;letter-spacing:.14em;
+  text-transform:uppercase;color:#767D83;cursor:pointer;white-space:nowrap;
+  font-variation-settings:'wght' 600,'opsz' 14;transition:color .16s,background-color .16s}
+.act:hover{color:var(--chi)}
+.act.on{color:var(--chi);background:#16181B}
+.act:focus-visible{outline:2px solid #4A5359;outline-offset:-2px}
+#tools{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+
+#row2{flex:1;min-height:0;display:flex;align-items:center;gap:12px;padding:0 14px 0 12px}
+.nav{display:inline-flex;align-items:center;justify-content:center;width:36px;height:32px;
+  border:1px solid var(--line2);border-radius:5px;background:none;color:#8B9298;
+  cursor:pointer;font-size:16px;line-height:1;transition:color .16s,border-color .16s}
+.nav:hover:not(:disabled){color:var(--chi);border-color:#454D53}
+.nav:disabled{opacity:.3;cursor:default}
+.nav:focus-visible,#bar button:focus-visible{outline:2px solid #4A5359;outline-offset:2px}
+#where{display:flex;align-items:baseline;gap:11px;background:none;border:none;cursor:pointer;
+  padding:5px 8px;margin-left:4px;border-radius:5px;min-width:0;
+  transition:background-color .16s}
+#where:hover{background:#131518}
+#sname{font-size:16px;color:var(--chi);font-variation-settings:'wght' 500,'opsz' 16;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:26vw}
+#count{font-size:14px;color:#8B9298;font-variant-numeric:tabular-nums;flex:0 0 auto}
+#hint{flex:1;min-width:0;font-size:15px;color:#8B9298;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis}
+#hint b{color:var(--chi);font-variation-settings:'wght' 550,'opsz' 15}
+.tool{background:none;border:1px solid var(--line2);border-radius:4px;color:#8B9298;
+  padding:6px 11px;font-size:14px;letter-spacing:.12em;text-transform:uppercase;
+  font-variation-settings:'wght' 560,'opsz' 14;cursor:pointer;white-space:nowrap;
+  transition:color .16s,border-color .16s}
+.tool:hover{color:var(--chi);border-color:#454D53}
+.tool.on{color:var(--chi);border-color:#4E565C}
+.tool .kb{color:#5A6167;margin-left:6px;font-size:13px}
+.dots{display:inline-flex;gap:5px;margin-left:9px;vertical-align:2px}
+.dots i{width:5px;height:5px;border-radius:50%;background:#333940;display:block}
+.dots i.on{background:#A8AEB3}
+@media (max-width:1400px){.tool .kb{display:none}}
+@media (max-width:1240px){.act{padding:0 9px;letter-spacing:.1em}}
+@media (max-width:1100px){#sname{max-width:20vw}}
+
+/* ═══════════════════════ the screen index ═══════════════════════ */
+#index{position:fixed;inset:0;z-index:60;background:rgba(6,7,8,.94);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  padding:38px clamp(30px,5vw,76px) 60px;overflow-y:auto;display:none}
+#index.on{display:block}
+#ihead{display:flex;gap:30px;align-items:flex-start;justify-content:space-between;
+  margin-bottom:26px;flex-wrap:wrap}
+#ihead .sub{margin-bottom:0;max-width:76ch}
+#ihead .sub b{color:var(--chi);font-variation-settings:'wght' 600,'opsz' 16}
+#i-start{flex:0 0 auto;padding:10px 16px}
+#index h2{font-family:Fraunces,Georgia,serif;color:var(--chi);margin:0 0 6px;font-size:30px;
+  font-variation-settings:'wght' 380,'opsz' 30;letter-spacing:-.015em}
+#index .sub{color:var(--clo);font-size:16px;margin:0 0 28px;max-width:70ch}
+.acts{display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:26px 30px}
+.actcol h3{font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:#767D83;
+  font-variation-settings:'wght' 600,'opsz' 14;margin:0 0 14px}
+.jump{display:block;width:100%;text-align:left;background:none;border:none;
+  border-left:1px solid transparent;padding:8px 0 8px 13px;margin-left:-14px;color:var(--cmid);
+  cursor:pointer;font-size:16px;line-height:1.35;transition:color .16s,border-color .16s}
+.jump:hover{color:var(--chi);border-left-color:#394045}
+.jump.on{color:var(--chi);border-left-color:#5C656C}
+.jump em{display:block;font-style:normal;font-size:14px;color:#7A8288;margin-top:2px}
+.jump:focus-visible{outline:2px solid #4A5359;outline-offset:2px}
+
+/* ═══════════════════════ the notes drawer ═══════════════════════ */
+#notes{position:fixed;top:0;bottom:var(--barh);right:0;width:min(450px,42vw);z-index:50;
+  background:var(--panel);border-left:1px solid var(--line);padding:28px 30px 44px;
+  overflow-y:auto;transform:translateX(101%);
+  transition:transform .3s cubic-bezier(.16,1,.3,1);font-size:16px;line-height:1.58;
+  color:var(--cmid)}
+body.nobar #notes{bottom:0}
+#notes.on{transform:none}
+#notes h4{font-family:Fraunces,Georgia,serif;color:var(--chi);margin:0 0 14px;font-size:23px;
+  font-variation-settings:'wght' 400,'opsz' 23;letter-spacing:-.012em;line-height:1.2}
+#notes h5{margin:22px 0 7px;font-size:14px;letter-spacing:.17em;text-transform:uppercase;
+  color:#565D63;font-variation-settings:'wght' 600,'opsz' 14}
+#notes p{margin:0 0 11px}
+#notes em{font-style:normal;color:var(--chi);font-variation-settings:'wght' 550,'opsz' 16}
+#notes strong{color:var(--chi);font-variation-settings:'wght' 620,'opsz' 16}
+#notes code{font-family:Inter,sans-serif;font-size:15px;letter-spacing:.03em;color:var(--chi);
+  font-variation-settings:'wght' 500,'opsz' 15}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.tag{font-size:13px;letter-spacing:.07em;padding:3px 8px;border:1px solid var(--line2);
+  border-radius:3px;color:var(--clo);font-variation-settings:'wght' 550,'opsz' 13;
+  white-space:nowrap}
+.tag.open{border-color:#4A3F38;color:#A98A78}
+.openbox{border:1px dashed #43382F;border-radius:5px;padding:15px 17px;margin-top:18px}
+.openbox h5{margin-top:0;color:#A98A78}
+.openbox p:last-child{margin-bottom:0}
+
+/* ═══════════════════════ the bloom tuner ═══════════════════════ */
+/* Compact and bottom-right on purpose: the sentence it is tuning starts at the
+   left margin and sits high, so the panel must not be in front of it. It tracks
+   the stage rather than the viewport, so opening the drawer moves it. */
+#tuner{position:fixed;right:16px;bottom:calc(var(--barh) + 14px);width:352px;z-index:45;
+  transition:right .3s cubic-bezier(.16,1,.3,1);
+  background:var(--panel);border:1px solid var(--line2);border-radius:6px;
+  padding:15px 18px 16px;display:none;font-size:15px;color:var(--cmid);
+  max-height:calc(100vh - var(--barh) - 30px);overflow-y:auto}
+body.nobar #tuner{bottom:14px}
+body.notes #tuner{right:calc(min(450px,42vw) + 16px)}
+#tuner.on{display:block}
+#tuner h4{margin:0 0 3px;font-size:14px;letter-spacing:.17em;text-transform:uppercase;
+  color:#565D63;font-variation-settings:'wght' 600,'opsz' 14}
+#tuner .lede{font-size:14px;color:#8B9298;margin:0 0 11px;line-height:1.42}
+#tuner .lede em{font-style:normal;color:var(--chi)}
+#tuner .grid{display:grid;grid-template-columns:1fr 1fr;gap:2px 18px}
+.ctl{margin-bottom:6px}
+.ctl .top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+.ctl label{font-size:15px;color:var(--cmid)}
+.ctl .v{font-size:15px;color:var(--chi);font-variant-numeric:tabular-nums}
+.ctl input[type=range]{width:100%;height:20px;background:none;-webkit-appearance:none;
+  appearance:none;cursor:pointer;display:block}
+.ctl input[type=range]::-webkit-slider-runnable-track{height:2px;background:#2A3035}
+.ctl input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;
+  border-radius:50%;background:var(--chi);margin-top:-5.5px}
+.ctl input[type=range]::-moz-range-track{height:2px;background:#2A3035}
+.ctl input[type=range]::-moz-range-thumb{width:13px;height:13px;border:none;border-radius:50%;
+  background:var(--chi)}
+.ctl input[type=range]:focus-visible{outline:2px solid #4A5359;outline-offset:4px}
+
+#tprofile{display:flex;gap:6px;margin-bottom:11px}
+#tprofile button{flex:1;padding:6px 3px;font-size:13px;letter-spacing:.05em;
+  border:1px solid var(--line2);background:none;color:var(--clo);border-radius:3px;
+  cursor:pointer;transition:color .16s,border-color .16s}
+#tprofile button:hover{color:var(--chi);border-color:#394045}
+#tprofile button.on{color:var(--chi);border-color:#4E565C}
+#tout{font-size:14px;color:#8B9298;line-height:1.5;border-top:1px solid var(--line);
+  padding-top:9px;margin-top:9px;font-variant-numeric:tabular-nums}
+#tout b{color:var(--chi);font-variation-settings:'wght' 550,'opsz' 14}
+#twarn{font-size:14px;color:#BFA08C;line-height:1.45;margin-top:8px}
+#tbtns{display:flex;gap:8px;margin-top:10px}
+#tbtns button{flex:1;padding:8px 4px;font-size:13px;letter-spacing:.12em;text-transform:uppercase;
+  border:1px solid var(--line2);background:none;color:var(--clo);border-radius:3px;
+  cursor:pointer;font-variation-settings:'wght' 560,'opsz' 13;
+  transition:color .16s,border-color .16s}
+#tbtns button:hover{color:var(--chi);border-color:#394045}
+
+/* ═══════════════════════ too small ═══════════════════════ */
+#toosmall{position:fixed;inset:0;z-index:90;background:var(--page);display:none;
+  align-items:center;justify-content:center;padding:40px;text-align:center}
+#toosmall p{max-width:46ch;color:var(--cmid);font-size:18px;line-height:1.6}
+#toosmall strong{color:var(--chi);font-variation-settings:'wght' 600,'opsz' 18}
+@media (max-width:1000px),(max-height:600px){
+  #toosmall{display:flex}
+  #stage,#bar,#notes,#tuner,#index{display:none!important}
+}
+
+/* D17: if a composition depends on tiny type, the composition changes, not the
+   type. On a short display the composition gets less air and the DISPLAY sizes
+   step down one notch — 24px is still seven above the 17px body floor, and the
+   alternative was the exit falling off the bottom of the screen, which is the
+   one thing D7 will not have. Body, supporting and quiet text never move. */
+/* One short-screen regime, not a ladder of them. Anything under 800px tall has
+   to fit a sentence, a microphone and an exit, and the air is what gives. Body,
+   supporting and quiet text never move at any size — D17's floors are floors,
+   and the display sizes are already answering to min(vw,vh) above. */
+@media (max-height:800px){
+  .pane{padding-top:clamp(16px,2.8vh,44px);padding-bottom:clamp(12px,2.2vh,40px)}
+  /* those margins existed to give a hairline room to breathe. The hairline is
+     gone, the neighbouring margins already carry the rhythm, and on a screen
+     that has to fit an exit at the bottom this is free space. Panes that scroll
+     — and the record, which scrolls per column — keep theirs, because there the
+     gap is the only thing sectioning the page. */
+  .pane:not(.scroll):not(.raw) hr.r{margin-top:0!important;margin-bottom:0!important}
+  .cand{padding-top:clamp(12px,1.9vh,25px);padding-bottom:clamp(12px,1.9vh,25px)}
+  .rows{gap:clamp(14px,2.2vh,26px)}
+  .strip .d{gap:7px}
+  .settle{height:clamp(170px,25vh,290px)}
+  .title{line-height:1.16}
+  .btn{padding:9px 20px}
+  .hold{gap:11px}
+  .grow{--gmin:0px!important}
+  /* max-height beats an inline height, so this is the one lever that reaches
+     every voice canvas without touching twenty inline styles */
+  .linec{max-height:15vh}
+  /* a window on a short display gives up its margin before it gives up a line */
+  [data-surface=float] .frame{height:min(var(--fh,720px),calc(100% - 12px));
+    width:min(var(--fw,1080px),calc(100% - 32px))}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .scene.on.arriving,.swapin,.stag{animation:none}
+  .scene.leaving{display:none}
+  .rise{opacity:1;transform:none}
+  .emph::after{transition-duration:.001ms}
+}
+</style>

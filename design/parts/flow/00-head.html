@@ -1,0 +1,155 @@
+<title>Force — the whole shape</title>
+
+<style>
+@font-face{font-family:Fraunces;src:url(data:font/woff2;base64,__FRAUNCES__) format('woff2');font-weight:100 900;font-style:normal;font-display:block}
+@font-face{font-family:Inter;src:url(data:font/woff2;base64,__INTER__) format('woff2');font-weight:100 900;font-style:normal;font-display:block}
+
+:root{
+  --page:#08090A; --card:#101112; --card2:#15171A;
+  --line:#1B1F22; --line2:#272C31; --edge:#333A40;
+  --chi:#E4E7EA; --cmid:#9BA2A8; --clo:#798086;
+  --accent:#B4553A; --kept:#EDEAE4; --broken:#8A7566; --unsettled:#5A6066;
+  --back:#7A6552;
+}
+:root[data-theme="light"],:root[data-theme="dark"]{color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--cmid);
+  font-family:Inter,system-ui,sans-serif;font-size:16px;line-height:1.6;
+  font-variation-settings:'wght' 400,'opsz' 16;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+::selection{background:#2A3036;color:var(--chi)}
+
+/* ─────────────── shell ─────────────── */
+.wrap{max-width:1480px;margin:0 auto;padding:0 28px 140px}
+header.top{padding:56px 0 30px}
+h1{font-family:Fraunces,Georgia,serif;color:var(--chi);margin:0;
+  font-size:clamp(38px,4.4vw,62px);font-variation-settings:'wght' 330,'opsz' 62;
+  letter-spacing:-.03em;line-height:1.02}
+.lede{max-width:74ch;margin:20px 0 0;font-size:18px;line-height:1.62}
+.lede em{font-style:normal;color:var(--chi);font-variation-settings:'wght' 550,'opsz' 18}
+.lede b{color:var(--chi);font-variation-settings:'wght' 620,'opsz' 18}
+
+.bar{position:sticky;top:0;z-index:40;background:rgba(8,9,10,.93);
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);margin:26px -28px 0;padding:12px 28px;
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.bar .n{font-size:15px;color:var(--clo)}
+.bar .n b{color:var(--chi);font-variant-numeric:tabular-nums}
+.spacer{flex:1}
+.btn{background:none;border:1px solid var(--line2);border-radius:5px;color:#8E959B;
+  padding:7px 13px;font-size:14px;letter-spacing:.11em;text-transform:uppercase;
+  font-variation-settings:'wght' 560,'opsz' 14;cursor:pointer;white-space:nowrap;
+  transition:color .16s,border-color .16s}
+.btn:hover{color:var(--chi);border-color:#3E464C}
+.btn.hot{color:var(--chi);border-color:#4E565C}
+.btn:focus-visible{outline:2px solid #4A5359;outline-offset:2px}
+
+/* ─────────────── the chart ─────────────── */
+#chart{position:relative;margin-top:34px;padding-left:46px}
+#wires{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;
+  overflow:visible}
+.band{position:relative;z-index:1;padding:26px 0 8px}
+.band + .band{margin-top:14px}
+/* the wires pass behind the band headings, and with no fill you read them
+   through the words. The ground colour masks them. */
+.bandhead{display:flex;align-items:baseline;gap:16px;margin-bottom:20px;flex-wrap:wrap;
+  position:relative;z-index:2;background:var(--page);padding:7px 0}
+.bandhead h2{font-size:14px;letter-spacing:.2em;text-transform:uppercase;color:#7C838A;
+  font-variation-settings:'wght' 640,'opsz' 14;margin:0}
+.bandhead p{margin:0;font-size:15px;color:#6E757B;max-width:70ch}
+/* five columns, always. Flex wrapped the fifth box onto its own line the moment
+   the gaps got wide enough to hold the edge labels, and a wrapped row breaks
+   the whole point of the drawing. */
+.row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:clamp(50px,5.6vw,94px);align-items:stretch}
+
+.node{position:relative;z-index:2;min-width:0;
+  background:var(--card);border:1px solid var(--line2);border-radius:9px;
+  padding:16px 17px 15px;text-align:left;cursor:pointer;display:block;
+  transition:border-color .18s,background-color .18s,transform .18s}
+.node:hover{border-color:#3F474E;background:var(--card2);transform:translateY(-2px)}
+.node.on{border-color:#5C656C;background:var(--card2)}
+.node:focus-visible{outline:2px solid #4A5359;outline-offset:3px}
+.node .t{font-family:Fraunces,Georgia,serif;color:var(--chi);font-size:19px;
+  font-variation-settings:'wght' 420,'opsz' 19;letter-spacing:-.012em;line-height:1.2;
+  display:block}
+.node .s{display:block;margin-top:7px;font-size:14px;line-height:1.5;color:#828A90}
+.node .tag{display:inline-block;margin-top:11px;font-size:12px;letter-spacing:.12em;
+  text-transform:uppercase;color:#6C737A;font-variation-settings:'wght' 620,'opsz' 12}
+/* the one irreversible act in the product gets the one chromatic mark */
+.node.commit{border-color:#4A3128}
+.node.commit::before{content:"";position:absolute;left:-1px;top:14px;bottom:14px;width:2px;
+  background:var(--accent);border-radius:1px}
+.node.commit .tag{color:#B2795F}
+.node.quiet{background:none;border-style:dashed;border-color:#242A2F}
+.node .dot{position:absolute;top:-6px;right:-6px;width:19px;height:19px;border-radius:50%;
+  background:#2E3A44;color:#CFD6DC;font-size:11px;line-height:19px;text-align:center;
+  font-variation-settings:'wght' 700,'opsz' 11;display:none}
+.node.noted .dot{display:block}
+.node.noted{border-color:#3B4A56}
+
+.gap{min-width:0}
+
+/* ─────────────── the reader ─────────────── */
+#panel{position:fixed;top:0;right:0;bottom:0;width:min(470px,44vw);z-index:60;
+  background:#0C0E10;border-left:1px solid var(--line);padding:26px 28px 40px;
+  overflow-y:auto;transform:translateX(101%);
+  transition:transform .32s cubic-bezier(.16,1,.3,1)}
+#panel.on{transform:none}
+#panel h3{font-family:Fraunces,Georgia,serif;color:var(--chi);margin:0 0 4px;font-size:26px;
+  font-variation-settings:'wght' 400,'opsz' 26;letter-spacing:-.016em;line-height:1.14}
+#panel .where{font-size:14px;letter-spacing:.16em;text-transform:uppercase;color:#6C737A;
+  font-variation-settings:'wght' 620,'opsz' 14;margin:0 0 16px}
+#panel h4{margin:22px 0 7px;font-size:13px;letter-spacing:.17em;text-transform:uppercase;
+  color:#6C737A;font-variation-settings:'wght' 640,'opsz' 13}
+#panel p{margin:0 0 11px;font-size:16px;line-height:1.58}
+#panel em{font-style:normal;color:var(--chi);font-variation-settings:'wght' 560,'opsz' 16}
+#panel .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.chip{font-size:12px;letter-spacing:.07em;padding:3px 8px;border:1px solid var(--line2);
+  border-radius:3px;color:#8E959B;font-variation-settings:'wght' 560,'opsz' 12;white-space:nowrap}
+.chip.open{border-color:#4A3F38;color:#B08D77}
+#panel textarea{width:100%;min-height:150px;margin-top:8px;background:#0A0C0D;
+  border:1px solid var(--line2);border-radius:6px;color:var(--chi);padding:13px 14px;
+  font:inherit;font-size:16px;line-height:1.55;resize:vertical}
+#panel textarea:focus{outline:none;border-color:#4E565C}
+#panel textarea::placeholder{color:#5A6167}
+#panel .x{position:absolute;top:18px;right:20px;background:none;border:none;color:#6C737A;
+  font-size:22px;line-height:1;cursor:pointer;padding:6px}
+#panel .x:hover{color:var(--chi)}
+.pnav{display:flex;gap:9px;margin-top:16px}
+.pnav .btn{flex:1;text-align:center}
+
+/* ─────────────── legend + closing ─────────────── */
+.legend{display:flex;gap:26px;flex-wrap:wrap;margin-top:14px;font-size:14px;color:#727980}
+.legend span{display:inline-flex;align-items:center;gap:9px}
+.legend i{width:30px;height:0;border-top:2px solid var(--edge);display:block}
+.legend i.b{border-top-style:dashed;border-top-color:var(--back)}
+.legend i.t{border-top-color:#3E4A54}
+.legend i.a{border-top-color:var(--accent)}
+
+.note{border:1px solid var(--line2);border-radius:7px;padding:19px 21px;margin-top:40px;
+  background:#0C0E10;max-width:82ch}
+.note.open{border-style:dashed;border-color:#43382F}
+.note h5{margin:0 0 9px;font-size:13px;letter-spacing:.17em;text-transform:uppercase;
+  color:#B08D77;font-variation-settings:'wght' 640,'opsz' 13}
+.note p{margin:0 0 11px;font-size:16px}
+.note p:last-child{margin-bottom:0}
+.note b{color:var(--chi);font-variation-settings:'wght' 620,'opsz' 16}
+.note em{font-style:normal;color:var(--chi);font-variation-settings:'wght' 550,'opsz' 16}
+
+#out{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+  background:#1C2226;border:1px solid #39424A;border-radius:6px;color:var(--chi);
+  padding:11px 18px;font-size:15px;opacity:0;pointer-events:none;z-index:70;
+  transition:opacity .25s,transform .25s}
+#out.on{opacity:1;transform:translateX(-50%)}
+
+@media (max-width:900px){
+  #panel{width:100%}
+  #chart{padding-left:0}
+  .row{grid-template-columns:1fr;gap:16px}
+  .gap{display:none}
+  .node{max-width:none}
+  .gap{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.001ms!important}}
+</style>

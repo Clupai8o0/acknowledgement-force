@@ -1,0 +1,275 @@
+<section class="sec-head">
+  <span class="lab">Section H</span>
+  <h2 class="sec">Not decided</h2>
+  <p class="pro">Everything below is open on purpose. None of it is drawn as though it were
+    settled, and none of it should be resolved by someone quietly picking one and building it.
+    Two of these block code: a verdict added after days exist is a migration <em class="k">and</em>
+    a palette change, and a stroke width chosen by accident is how v1 shipped a 1.72:1 mark.</p>
+</section>
+
+<!-- ══════════════════════════ H1 ══════════════════════════ -->
+<article class="plate" id="h1">
+  <div class="plate-head"><span class="no">H1</span><h3 class="pt">Is there a fourth verdict?</h3></div>
+  <div class="chips"><span class="chip open">blocks the enum</span><span class="chip">D5 vs D7</span></div>
+  <p class="cap">D5 says the day settles as <em class="k">kept / partial / broken</em>. D7, the
+    palette note in FORCE-V2 §4 and <code class="h">spikes/SPEC.md</code> all say
+    <em class="k">kept / broken / unsettled</em>. Three places against one, and D7 is the later
+    and more worked-out decision — but <code class="h">partial</code> was never explicitly
+    retracted. Every screen on this page is drawn with three states. Here is what the fourth
+    costs.</p>
+
+  <div class="pair" style="margin-top:8px">
+    <div>
+      <span class="lab" style="margin-bottom:12px">Three states — what is drawn above</span>
+      <div class="dev" data-specimen style="padding:28px;border-radius:8px;box-shadow:0 0 0 1px #1E2225">
+        <div class="strip">
+          <div class="d"><i class="m kept"></i><span class="dl">W</span></div>
+          <div class="d"><i class="m kept"></i><span class="dl">T</span></div>
+          <div class="d"><i class="m broken"></i><span class="dl">F</span></div>
+          <div class="d"><i class="m kept"></i><span class="dl">S</span></div>
+          <div class="d"><i class="m unsettled"></i><span class="dl">S</span></div>
+          <div class="d"><i class="m kept"></i><span class="dl">M</span></div>
+          <div class="d"><i class="m broken"></i><span class="dl">T</span></div>
+        </div>
+        <p class="quiet" style="margin-top:20px">Three shapes: filled light, filled clay, open
+          ring. Tellable apart at 11&nbsp;px, in the dark, without a legend.</p>
+      </div>
+    </div>
+    <div>
+      <span class="lab" style="margin-bottom:12px">Four states — what it would take</span>
+      <div class="dev" data-specimen style="padding:28px;border-radius:8px;box-shadow:0 0 0 1px #1E2225">
+        <div class="strip">
+          <div class="d"><i class="m kept"></i><span class="dl">W</span></div>
+          <div class="d"><i class="m" style="background:linear-gradient(90deg,var(--kept) 50%,var(--broken) 50%)"></i><span class="dl">T</span></div>
+          <div class="d"><i class="m broken"></i><span class="dl">F</span></div>
+          <div class="d"><i class="m kept"></i><span class="dl">S</span></div>
+          <div class="d"><i class="m unsettled"></i><span class="dl">S</span></div>
+          <div class="d"><i class="m" style="background:linear-gradient(90deg,var(--kept) 50%,var(--broken) 50%)"></i><span class="dl">M</span></div>
+          <div class="d"><i class="m broken"></i><span class="dl">T</span></div>
+        </div>
+        <p class="quiet" style="margin-top:20px">A fourth mark needs an eleventh token or a
+          split fill. At 11&nbsp;px the split reads as a smudge, so the mark grows — and the mark
+          size is what sets the strip's whole geometry.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout open" style="margin-top:26px">
+    <h5>What it needs from you</h5>
+    <p>My read: <code class="h">partial</code> is a leftover from before D7 existed, and D7's
+      argument actively works against it — the value of the record is that
+      <em class="k">unsettled is not broken</em>, and a fourth state that means "sort of kept"
+      gives every ambiguous night a place to hide. A day that closes as broken, spoken honestly,
+      is worth more than a day that closes as kept; a day that closes as <em class="k">partial</em>
+      is worth almost nothing, because nobody ever has to say what actually happened.</p>
+    <p>But this is D5's word against D7's and it is your call, not mine. It has to be made before
+      the enum exists: adding a state after days are on disk is a migration and a palette change
+      at the same time.</p>
+  </div>
+</article>
+
+<!-- ══════════════════════════ H2 ══════════════════════════ -->
+<article class="plate" id="h2">
+  <div class="plate-head"><span class="no">H2</span><h3 class="pt">unsettled at 2.97:1</h3></div>
+  <div class="chips"><span class="chip open">0.03 under the floor</span><span class="chip">D19 locks the hex</span></div>
+  <p class="cap"><code class="h">#5A6066</code> against <code class="h">bg</code> measures 2.97:1.
+    The WCAG non-text minimum is 3:1. It is a 1.7× improvement on v1's 1.72:1 and nowhere near
+    the old failure — and it is still under the line, on the exact state D7 calls the most
+    diagnostic signal in the product.</p>
+
+  <div class="devbox"><div class="dev" data-specimen style="width:660px;padding:34px 38px;border-radius:8px;
+       box-shadow:0 0 0 1px #1E2225;display:grid;grid-template-columns:1fr 1fr 1fr;gap:34px">
+    <div>
+      <span class="eyebrow">1.4px — v1's weight</span>
+      <div class="strip" style="margin-top:18px">
+        <div class="d"><i class="m kept"></i><span class="dl">S</span></div>
+        <div class="d"><i class="m" style="box-shadow:inset 0 0 0 1.4px var(--unsettled)"></i><span class="dl">S</span></div>
+        <div class="d"><i class="m" style="box-shadow:inset 0 0 0 1.4px var(--unsettled)"></i><span class="dl">M</span></div>
+        <div class="d"><i class="m broken"></i><span class="dl">T</span></div>
+      </div>
+    </div>
+    <div>
+      <span class="eyebrow">1.6px — the showcase fix</span>
+      <div class="strip" style="margin-top:18px">
+        <div class="d"><i class="m kept"></i><span class="dl">S</span></div>
+        <div class="d"><i class="m unsettled"></i><span class="dl">S</span></div>
+        <div class="d"><i class="m unsettled"></i><span class="dl">M</span></div>
+        <div class="d"><i class="m broken"></i><span class="dl">T</span></div>
+      </div>
+    </div>
+    <div>
+      <span class="eyebrow">Solid — reads as a third state</span>
+      <div class="strip" style="margin-top:18px">
+        <div class="d"><i class="m kept"></i><span class="dl">S</span></div>
+        <div class="d"><i class="m" style="background:var(--unsettled)"></i><span class="dl">S</span></div>
+        <div class="d"><i class="m" style="background:var(--unsettled)"></i><span class="dl">M</span></div>
+        <div class="d"><i class="m broken"></i><span class="dl">T</span></div>
+      </div>
+    </div>
+  </div></div>
+
+  <div class="callout open" style="margin-top:26px">
+    <h5>Three ways out, and they are not equivalent</h5>
+    <p><em class="k">Carry it with stroke weight</em> — the showcase's own fix, 1.4&nbsp;px to
+      1.6&nbsp;px. Cheapest, keeps D19 untouched, and the middle panel above is what every screen
+      on this page already uses.</p>
+    <p><em class="k">Fill it solid</em> — passes comfortably, but then <code class="h">unsettled</code>
+      and <code class="h">broken</code> are both filled discs and the open ring stops carrying
+      "you didn't show up". The shape is doing real work; I would not spend it.</p>
+    <p><em class="k">Lighten the hex</em> — that is a change to D19 and goes back to the record.
+      Roughly <code class="h">#5D646A</code> clears 3:1, and it would need re-measuring against
+      <code class="h">bg2</code> as well, where it currently sits at 2.7:1.</p>
+    <p style="color:var(--chi)">Whichever way it goes: measure it and write the number down. That
+      is the whole difference between this and how v1 shipped.</p>
+  </div>
+</article>
+
+<!-- ══════════════════════════ H3 ══════════════════════════ -->
+<article class="plate" id="h3">
+  <div class="plate-head"><span class="no">H3</span><h3 class="pt">Fraunces Italic is not in the repo</h3></div>
+  <div class="chips"><span class="chip new">found while building this</span><span class="chip">D20 italic + rule</span></div>
+  <p class="cap">D20 locks the emphasis as <em class="k">italic and a rule</em>. Both font
+    directories — <code class="h">force-old/…/Resources/Fonts/</code> and
+    <code class="h">spikes/flutter-showcase/assets/fonts/</code> — contain exactly one Fraunces
+    file, and its axes are <code class="h">opsz</code>, <code class="h">wght</code>,
+    <code class="h">SOFT</code>, <code class="h">WONK</code>. There is no <code class="h">ital</code>
+    axis. Fraunces ships italic as a separate file and nobody has ever added it.</p>
+
+  <div class="pair" style="margin-top:8px">
+    <div>
+      <span class="lab" style="margin-bottom:12px">Real italic — the file I fetched</span>
+      <div class="dev" data-specimen style="padding:30px 28px;border-radius:8px;box-shadow:0 0 0 1px #1E2225">
+        <p class="claim sm">I am someone who trains <span class="emph drawn"
+          style="font-variation-settings:'wght' 430,'opsz' 26">when I don't feel like it</span>.</p>
+      </div>
+    </div>
+    <div>
+      <span class="lab" style="margin-bottom:12px">Synthesised oblique — roman, skewed</span>
+      <div class="dev" data-specimen style="padding:30px 28px;border-radius:8px;box-shadow:0 0 0 1px #1E2225">
+        <p class="claim sm">I am someone who trains <span class="emph drawn"
+          style="font-style:normal;display:inline-block;transform:skewX(-11deg);
+          font-variation-settings:'wght' 430,'opsz' 26">when I don't feel like it</span>.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout" style="margin-top:26px">
+    <p>The left has true italic letterforms — a single-storey <em class="k">a</em>, a different
+      <em class="k">f</em>, narrower fitting. The right is the roman leaning over, and on a serif
+      that reads as a rendering fault rather than as emphasis. This is a five-minute fix, but it
+      is only five minutes if someone notices before the Dart is written rather than after the
+      first screenshot looks slightly wrong.</p>
+    <p class="dim">Fix: add <code class="h">Fraunces-Italic[SOFT,WONK,opsz,wght].ttf</code> from
+      <code class="h">google/fonts/ofl/fraunces</code> to the app's font assets and declare it as
+      the italic style of the same family. It is already downloaded into this session's scratchpad,
+      and this page is rendering it.</p>
+  </div>
+</article>
+
+<!-- ══════════════════════════ H4 ══════════════════════════ -->
+<article class="plate" id="h4">
+  <div class="plate-head"><span class="no">H4</span><h3 class="pt">The landing page — a proposal, not a design</h3></div>
+  <div class="chips"><span class="chip open">marketing voice undecided</span><span class="chip">D14</span>
+    <span class="chip">D21 GitHub</span></div>
+  <p class="cap">COPY.md lists the landing page and marketing register as undecided, with exactly
+    one binding rule: it may not claim a gate you cannot escape. So this is drawn dashed and I am
+    not going to pretend it is settled — it exists so you have something concrete to react to.</p>
+
+  <div class="devbox"><div class="dev browser" style="height:540px;box-shadow:0 0 0 1px #43382F">
+    <div class="urlbar"><i class="tl"></i><i class="tl"></i><i class="tl"></i>
+      <span class="u">force.app</span></div>
+    <div class="app"><div class="win-body" style="overflow-y:auto">
+      <div style="padding:60px 64px 56px;max-width:640px">
+        <p class="closing" style="font-size:38px;font-variation-settings:'wght' 400,'opsz' 38;
+           max-width:17ch;line-height:1.18">Force keeps the record. You apply the force.</p>
+        <p class="body" style="margin-top:26px;max-width:48ch">One sentence about who you are.
+          One question a night. Say what actually happened, and the day closes as kept, broken,
+          or unsettled.</p>
+        <p class="body" style="margin-top:16px;max-width:48ch">You can always close it. That is
+          on purpose — the alternative to a cheap exit is never compliance, it's uninstallation.</p>
+        <div style="display:flex;gap:12px;margin-top:32px">
+          <button class="btn">Download for macOS</button>
+          <button class="btn plain">Read the source</button>
+        </div>
+        <p class="quiet" style="margin-top:18px">Signed and notarised. Not on the App Store —
+          the bypass instructions are in the README, and there is nothing to bypass.</p>
+        <hr style="margin:38px 0">
+        <div class="strip" style="gap:0">
+          <div class="d"><i class="m kept"></i><span class="dl">W</span></div>
+          <div class="d"><i class="m kept"></i><span class="dl">T</span></div>
+          <div class="d"><i class="m broken"></i><span class="dl">F</span></div>
+          <div class="d"><i class="m kept"></i><span class="dl">S</span></div>
+          <div class="d"><i class="m unsettled"></i><span class="dl">S</span></div>
+          <div class="d"><i class="m kept"></i><span class="dl">M</span></div>
+          <div class="d"><i class="m kept"></i><span class="dl">T</span></div>
+        </div>
+        <p class="quiet" style="margin-top:16px;max-width:46ch">unsettled is not broken. broken
+          means you showed up and lost. unsettled means you didn't show up — and a run of those
+          means the app is dying, which is the thing it most needs to be able to see.</p>
+      </div>
+    </div></div>
+  </div></div>
+
+  <div class="callout open" style="margin-top:26px">
+    <h5>What I deliberately did not do</h5>
+    <p>No screenshots of the gate, no feature grid, no testimonials, no "trusted by", no pricing.
+      A landing page for a product with one screen should be able to be the screen. Whether that
+      is the right instinct is a decision, and it is not in the record.</p>
+  </div>
+</article>
+
+<!-- ══════════════════════════ H5 ══════════════════════════ -->
+<article class="plate" id="h5">
+  <div class="plate-head"><span class="no">H5</span><h3 class="pt">Everything else still open</h3></div>
+  <p class="cap">Carried from FORCE-V2 §4/§5b, DESIGN.md and COPY.md, plus the four defaults I
+    assumed to draw these screens. Anything marked <em class="k">assumed</em> is a choice I made
+    to keep building, not a decision — say the word and it changes.</p>
+
+  <table class="t" style="margin-top:26px">
+    <tr><th>Open</th><th>Where it bites</th><th>State</th></tr>
+    <tr><td>A fourth verdict, <code class="h">partial</code></td><td>the enum, the palette, a migration</td><td class="no">blocks code</td></tr>
+    <tr><td>The commit flood — a full-window <code class="h">accent</code> field</td><td>a third use of a token D19 gives one use; see <a href="#a3" style="color:var(--chi)">A3</a></td><td class="no">amends D19</td></tr>
+    <tr><td>Inverted text on the flood at 3.87:1</td><td>nothing clears 4.5:1 on that orange; see <a href="#a3" style="color:var(--chi)">A3</a></td><td class="no">breaks D17</td></tr>
+    <tr><td><strong>Private claims</strong></td><td>a whole surface, and a fork on sync; see <a href="#f4" style="color:var(--chi)">F4</a></td><td class="no">needs a decision</td></tr>
+    <tr><td>Do private claims sync at all</td><td>§1b says state syncs; device-only vs end-to-end</td><td class="no">needs a decision</td></tr>
+    <tr><td>The hold-to-speak treatment</td><td>D20 locks the layered ring; <a href="#b3b" style="color:var(--chi)">B3b</a> shows four alternatives</td><td class="no">would amend D20</td></tr>
+    <tr><td><code class="h">unsettled</code> at 2.97:1</td><td>every strip in the product</td><td class="no">blocks code</td></tr>
+    <tr><td>Speech-to-text: on-device or cloud</td><td>must degrade to something offline (D11)</td><td>open</td></tr>
+    <tr><td>The latency pipeline</td><td>no model call in the gate's critical path, ever</td><td>open</td></tr>
+    <tr><td>The image model's exact ID</td><td>Imagen 4 shut down 2026-08-17; confirm at wiring</td><td>open</td></tr>
+    <tr><td>What the engraving recolours to</td><td><code class="h">accent</code> disqualified by arithmetic</td><td>open</td></tr>
+    <tr><td>Light theme</td><td>whole contrast table re-measured, not inverted</td><td>open</td></tr>
+    <tr><td>How "more" is revealed on the gate</td><td>length settled, affordance is not</td><td>open</td></tr>
+    <tr><td>The Counsel's register</td><td>F1 above is a draft</td><td>open</td></tr>
+    <tr><td>Whether the 4 voices change words or only delivery</td><td>write one set of words until settled</td><td>open</td></tr>
+    <tr><td>Review cadence between day 7 and day 28</td><td>only those two are named</td><td>open</td></tr>
+    <tr><td>Landing page and marketing register</td><td>H4 is a proposal</td><td>open</td></tr>
+    <tr><td>Error and empty-state copy</td><td>night one has no record to speak from</td><td>open</td></tr>
+    <tr><td>iOS notification copy</td><td>the only lever iOS has</td><td>open</td></tr>
+    <tr><td>The onboarding questions</td><td>A1's question is mine</td><td>assumed</td></tr>
+    <tr><td>Where the illustration appears</td><td>reviews and record, never the gate</td><td>assumed</td></tr>
+    <tr><td>Sign-in in v1</td><td>drawn local-first, account on web only</td><td>assumed</td></tr>
+    <tr><td>What happens to voice recordings</td><td>drawn as transcribe, keep text, drop audio</td><td>assumed</td></tr>
+    <tr><td>How the two background claims surface</td><td>B1 is a proposal</td><td>assumed</td></tr>
+    <tr><td>Does the app reject a bad claim</td><td>A3 pushes back once, then accepts</td><td>assumed</td></tr>
+    <tr><td>What strict mode actually does</td><td>interrupt on a schedule vs block chosen apps</td><td class="no">two different products</td></tr>
+  </table>
+
+  <div class="callout" style="margin-top:30px">
+    <h5>Untested and load-bearing</h5>
+    <p>Real <code class="h">NSWorkspace.didWakeNotification</code> — the exact event that killed
+      v1 — has never been triggered; the spike could not do it without sudo, and
+      <code class="h">spikes/strict-mode/evidence/macos-events.log</code> is wired to catch it.
+      Also unverified: physical Android hardware, OEM battery-killer behaviour, Play policy on
+      <code class="h">SYSTEM_ALERT_WINDOW</code>, sustained animation on a real 120&nbsp;Hz
+      device, and the Windows build, which needs CI.</p>
+  </div>
+
+  <div class="callout" style="margin-top:20px;border-color:#2E3A44">
+    <h5 style="color:#8FA3B2">Not a design question, but it blocks D21</h5>
+    <p>The repo is not a git repository. <code class="h">force-old/</code> carries its own
+      <code class="h">.git</code>; the root has none. D21 is GitHub + Developer ID, signed and
+      notarised, so this has to happen before anything ships and it should happen before the
+      first Dart file exists, not after.</p>
+  </div>
+</article>

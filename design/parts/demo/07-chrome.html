@@ -1,0 +1,114 @@
+</div><!-- /#stage -->
+
+<aside id="notes" aria-label="Why this screen is like this"></aside>
+
+<div id="tuner" aria-label="Motion">
+  <h4>Motion</h4>
+  <p class="lede">D20 fixes the bloom's duration and forbids stagger <em>inside the
+    sentence</em>. It says nothing about the shape of the curve, or about the rest of the
+    screen — both are below.</p>
+
+  <div id="tprofile">
+    <button data-prof="now" title="shipped: close enough to the entrances that they read as one motion">0.95s</button>
+    <button data-prof="record" title="D20's number, unchanged">D20 · 1.15s</button>
+    <button data-prof="old" title="straight blur ramp with the ink arriving early — the shape you said came in too fast">Straight</button>
+  </div>
+
+  <div class="grid">
+    <div class="ctl"><div class="top"><label for="t-dur">Duration</label>
+      <span class="v" id="v-dur">0.95 s</span></div>
+      <input type="range" id="t-dur" min="600" max="2600" step="25" value="950"
+        title="above ~1.3s this stops being an application of D20 and becomes an amendment"></div>
+    <div class="ctl"><div class="top"><label for="t-blur">Blur</label>
+      <span class="v" id="v-blur">1.30×</span></div>
+      <input type="range" id="t-blur" min="50" max="240" step="5" value="130"
+        title="how far the ink has spread before it gathers, as a multiple of the type size"></div>
+    <div class="ctl"><div class="top"><label for="t-shape">Shape</label>
+      <span class="v" id="v-shape">smoothstep</span></div>
+      <input type="range" id="t-shape" min="0" max="100" step="1" value="55"
+        title="left = straight line, right = holds the haze longer at both ends"></div>
+    <div class="ctl"><div class="top"><label for="t-lead">Ink leads</label>
+      <span class="v" id="v-lead">+0.12</span></div>
+      <input type="range" id="t-lead" min="-40" max="60" step="2" value="12"
+        title="positive = the sentence darkens a little before it sharpens"></div>
+  </div>
+
+  <div class="ctl" style="margin-top:11px"><div class="top">
+      <label for="t-stag">Entrance stagger</label>
+      <span class="v" id="v-stag">1.00×</span></div>
+    <input type="range" id="t-stag" min="0" max="220" step="5" value="100"
+      title="how far apart the parts of a screen arrive — days in a strip, offers in a list. Never the claim: D20 rejected per-word stagger.">
+  </div>
+
+  <div id="tout"></div>
+  <div id="twarn" hidden></div>
+  <div id="tbtns">
+    <button id="t-play">Play it</button>
+    <button id="t-loop">Loop</button>
+  </div>
+</div>
+
+<div id="index" aria-label="All screens">
+  <div id="ihead">
+    <div>
+      <h2>Force — every screen</h2>
+      <p class="sub"><span id="nstates">Twenty-seven</span> states across six acts, desktop only.
+        The real controls work: hold the line and talk, pick a candidate, hold the ring for five and
+        a half seconds, throw the mark. <b>←</b> and <b>→</b> walk them in order and the six
+        act names in the bar jump straight to one — or press <b>1</b>–<b>6</b>. <b>esc</b> opens this
+        list, <b>N</b> says why a screen is like it is, <b>B</b> opens the Motion panel,
+        <b>R</b> replays an entrance, <b>H</b> hides all of this.</p>
+      <p class="sub" style="margin-top:12px"><b>The sentence arrives alone.</b> For the first
+        1.2&nbsp;seconds a screen is one claim resolving out of blur on an empty surface — no
+        eyebrow, no record, no microphone, no exit. Only when it has landed does the rest compose
+        around it, and only after that does the app underline the half that can be wrong. This costs
+        nothing: D20 already spends 0.9&nbsp;s between the bloom settling and the rule drawing, and
+        that gap was always empty. The screen is complete at the same moment it was before — the
+        claim just no longer shares its entrance with the furniture.</p>
+      <p class="sub" style="margin-top:12px"><b>Screens stagger; sentences never do.</b> A record
+        strip is twenty-eight days in sequence, a candidate list is three offers made one at a time,
+        a week of testimony is a week — those arrive in their own order because that order is what
+        they mean. D20 rejected per-word stagger on the claim and gave the reason, and the reason
+        still holds: a reveal you have already seen nineteen times is a wait. The gate's seven marks
+        sweep in 306&nbsp;ms; the day-28 review's twenty-eight take 900, because you sat down for
+        that one. No sweep runs longer than 900&nbsp;ms whatever it is sweeping, and the rule waits
+        for the whole screen rather than for a stopwatch — D20's 0.9&nbsp;s gap is a minimum, not a
+        schedule. <b>B</b> has a slider for all of it.</p>
+      <p class="sub" style="margin-top:12px"><b>Everything before a commitment is reversible; the
+        commitment is not.</b> Say more, pick a different sentence, start again, say it again, take
+        back a <em style="font-style:normal;color:var(--chi)">not tonight</em>, undo a thrown mark
+        before the panel goes. The one screen with no way back on it is the one where you commit to
+        28 days — D4 — because a product that asks for exactly one irreversible act can only ask
+        honestly if everything around it is cheap. That rule is not in FORCE-V2 yet and it should be.</p>
+      <p class="sub" style="margin-top:12px"><b>The transition between screens is not in the
+        record.</b> FORCE-V2 says nothing about how one surface replaces another, so this is a
+        proposal: it travels in the direction you asked for — forward, the screen you left drifts up
+        and out and the new one arrives from below — and it does <em style="font-style:normal;
+        color:var(--chi)">not</em> blur. Diffusion belongs to the Ink Bloom alone, and a page
+        transition that also blurs spends the one moment in the product where something resolves out
+        of nothing.</p>
+    </div>
+    <button class="tool" id="i-start">Start at night one</button>
+  </div>
+  <div class="acts" id="acts"></div>
+</div>
+
+<div id="bar">
+  <div id="prog"></div>
+  <div id="rail">
+    <div id="acts-rail"></div>
+    <div id="tools">
+      <button class="tool" id="t-notes">Why<span class="kb">N</span></button>
+      <button class="tool" id="t-bloom">Bloom<span class="kb">B</span></button>
+      <button class="tool" id="t-index">All screens<span class="kb">esc</span></button>
+      <button class="tool" id="t-hide">Hide<span class="kb">H</span></button>
+    </div>
+  </div>
+  <div id="row2">
+    <button class="nav" id="prev" aria-label="Previous screen">&#8592;</button>
+    <button class="nav" id="next" aria-label="Next screen">&#8594;</button>
+    <button id="where" aria-label="Open the list of every screen">
+      <span id="sname">The yap</span><span id="count">1 / 27</span></button>
+    <div id="hint"></div>
+  </div>
+</div>

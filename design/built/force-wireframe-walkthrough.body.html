@@ -1,0 +1,736 @@
+<title>Force — Wireframe Walkthrough</title>
+<style>
+  :root{
+    --paper:#F6F7F9; --ink:#14171A; --ink2:#4C545C; --ink3:#828C95;
+    --rule:#D9DEE3; --rule2:#E7EBEF;
+    --wf:#EDF0F3; --wf2:#E1E6EB; --wf3:#D3D9DF; --wfink:#2B3238; --wfink2:#6E7880;
+    --red:#A33D27; --redsoft:rgba(163,61,39,.09); --redline:rgba(163,61,39,.35);
+    --shadow:0 1px 2px rgba(20,23,26,.05),0 8px 24px rgba(20,23,26,.06);
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --serif:ui-serif,Georgia,"Times New Roman",serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --paper:#0D0F12; --ink:#E9ECEF; --ink2:#A3ACB4; --ink3:#6B747C;
+      --rule:#22272C; --rule2:#191D21;
+      --wf:#181C20; --wf2:#212730; --wf3:#2B323A; --wfink:#DDE2E6; --wfink2:#8A939B;
+      --red:#DE7159; --redsoft:rgba(222,113,89,.11); --redline:rgba(222,113,89,.34);
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 28px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"]{
+    --paper:#F6F7F9; --ink:#14171A; --ink2:#4C545C; --ink3:#828C95;
+    --rule:#D9DEE3; --rule2:#E7EBEF;
+    --wf:#EDF0F3; --wf2:#E1E6EB; --wf3:#D3D9DF; --wfink:#2B3238; --wfink2:#6E7880;
+    --red:#A33D27; --redsoft:rgba(163,61,39,.09); --redline:rgba(163,61,39,.35);
+    --shadow:0 1px 2px rgba(20,23,26,.05),0 8px 24px rgba(20,23,26,.06);
+  }
+  :root[data-theme="dark"]{
+    --paper:#0D0F12; --ink:#E9ECEF; --ink2:#A3ACB4; --ink3:#6B747C;
+    --rule:#22272C; --rule2:#191D21;
+    --wf:#181C20; --wf2:#212730; --wf3:#2B323A; --wfink:#DDE2E6; --wfink2:#8A939B;
+    --red:#DE7159; --redsoft:rgba(222,113,89,.11); --redline:rgba(222,113,89,.34);
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 28px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);
+    font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;margin:0}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px 96px}
+
+  /* ---- masthead ---- */
+  .mast{padding:56px 0 32px;border-bottom:1px solid var(--rule)}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--red);margin:0 0 18px}
+  h1{font-family:var(--mono);font-size:clamp(28px,5vw,44px);line-height:1.08;letter-spacing:-.02em;
+    font-weight:600;margin:0 0 20px;text-wrap:balance}
+  .lede{font-size:18px;color:var(--ink2);max-width:62ch;margin:0 0 28px}
+  .lede strong{color:var(--ink);font-weight:600}
+
+  .legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+  .chip{font-family:var(--mono);font-size:11px;letter-spacing:.05em;padding:5px 10px;
+    border:1px solid var(--rule);border-radius:100px;color:var(--ink2);background:var(--rule2)}
+  .chip b{color:var(--red);font-weight:600}
+
+  /* ---- section ---- */
+  section{padding:56px 0;border-bottom:1px solid var(--rule)}
+  .sec-head{display:flex;gap:16px;align-items:baseline;margin-bottom:8px}
+  .sec-num{font-family:var(--mono);font-size:12px;color:var(--red);letter-spacing:.1em;
+    padding-top:6px;flex:none}
+  h2{font-family:var(--mono);font-size:clamp(19px,2.6vw,26px);letter-spacing:-.01em;
+    font-weight:600;margin:0}
+  .sec-sub{color:var(--ink2);max-width:64ch;margin:10px 0 0 44px;font-size:15.5px}
+  @media(max-width:640px){.sec-sub{margin-left:0}}
+
+  /* ---- frame grid ---- */
+  .stage{display:grid;gap:28px;margin-top:36px;align-items:start}
+  .stage.two{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+  .stage.three{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+  .unit{min-width:0}
+  .cap{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--ink3);margin:0 0 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .cap .tag{color:var(--red);border:1px solid var(--redline);border-radius:3px;padding:1px 5px;
+    font-size:10px;letter-spacing:.06em}
+
+  /* ---- device frames ---- */
+  .phone{border:1px solid var(--rule);border-radius:26px;padding:8px;background:var(--rule2);
+    max-width:300px;box-shadow:var(--shadow)}
+  .phone .screen{background:var(--wf);border-radius:19px;padding:16px 14px;min-height:480px;
+    display:flex;flex-direction:column;position:relative;overflow:hidden}
+  .phone .notch{width:64px;height:4px;border-radius:99px;background:var(--wf3);
+    margin:2px auto 12px;flex:none}
+
+  .mac{border:1px solid var(--rule);border-radius:11px;background:var(--rule2);
+    box-shadow:var(--shadow);overflow:hidden}
+  .mac .bar{display:flex;gap:6px;padding:9px 12px;border-bottom:1px solid var(--rule)}
+  .mac .bar i{width:9px;height:9px;border-radius:99px;background:var(--wf3);display:block}
+  .mac .screen{background:var(--wf);padding:22px 20px;min-height:330px;
+    display:flex;flex-direction:column}
+
+  /* ---- wireframe primitives ---- */
+  .wf-label{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--wfink2)}
+  .claim{font-family:var(--serif);font-size:20px;line-height:1.22;color:var(--wfink);
+    letter-spacing:-.01em;margin:0}
+  .mac .claim{font-size:26px}
+  .said{font-size:11.5px;color:var(--wfink2);line-height:1.5}
+  .said em{font-style:normal;color:var(--wfink);display:block;margin-top:3px}
+  .btn{border:1px solid var(--wf3);border-radius:99px;padding:10px 16px;text-align:center;
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--wfink);background:var(--wf2)}
+  .btn.solid{background:var(--wf3)}
+  .btn.ghost{border-style:dashed;background:transparent;color:var(--wfink2)}
+  .link{font-size:12px;color:var(--wfink2);text-align:center;text-decoration:underline;
+    text-underline-offset:3px}
+  .spacer{flex:1;min-height:12px}
+  .row{display:flex;gap:8px;align-items:center}
+  .col{display:flex;flex-direction:column}
+  .g6{gap:6px}.g10{gap:10px}.g14{gap:14px}.g20{gap:20px}
+  .box{border:1px dashed var(--wf3);border-radius:7px;padding:11px;font-size:11.5px;
+    color:var(--wfink2);line-height:1.45}
+  .box b{color:var(--wfink);font-weight:600}
+  .fill{background:var(--wf2);border-style:solid}
+
+  /* record strip marks */
+  .marks{display:flex;gap:6px;align-items:center}
+  .mk{width:9px;height:9px;border-radius:99px;flex:none}
+  .mk.kept{background:var(--wfink)}
+  .mk.broken{background:var(--wf3)}
+  .mk.unset{border:1.5px solid var(--wf3)}
+  .mk.today{box-shadow:0 0 0 3px var(--redsoft);outline:1px solid var(--redline)}
+
+  /* meter */
+  .meter{display:flex;align-items:flex-end;gap:2px;height:46px;justify-content:center}
+  .meter i{width:3px;border-radius:2px;background:var(--wfink2);display:block}
+
+  /* chat bubbles */
+  .bub{border-radius:10px;padding:9px 11px;font-size:11.5px;line-height:1.45;max-width:88%}
+  .bub.them{background:var(--wf2);color:var(--wfink);align-self:flex-start}
+  .bub.you{border:1px dashed var(--wf3);color:var(--wfink2);align-self:flex-end}
+
+  /* ---- annotation ---- */
+  .notes{margin-top:22px;display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+  .note{border-left:2px solid var(--redline);padding:2px 0 2px 14px;font-size:14px;color:var(--ink2)}
+  .note b{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--red);margin-bottom:5px;font-weight:600}
+  .note code{font-family:var(--mono);font-size:12px;background:var(--redsoft);color:var(--red);
+    padding:1px 5px;border-radius:3px}
+
+  /* ---- state machine ---- */
+  .sm{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-top:32px}
+  .st{border:1px solid var(--rule);border-radius:9px;padding:16px;background:var(--rule2)}
+  .st h4{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+    margin:0 0 8px;color:var(--ink)}
+  .st p{margin:0;font-size:13.5px;color:var(--ink2);line-height:1.5}
+  .st .dot{display:inline-block;width:9px;height:9px;border-radius:99px;margin-right:7px;
+    vertical-align:middle}
+
+  /* ---- closing ---- */
+  .ask{margin-top:44px;border:1px solid var(--redline);border-radius:10px;padding:26px;
+    background:var(--redsoft)}
+  .ask h3{font-family:var(--mono);font-size:15px;letter-spacing:.02em;margin:0 0 14px;color:var(--ink)}
+  .ask ol{margin:0;padding-left:20px;color:var(--ink2)}
+  .ask li{margin-bottom:9px}
+  .ask li b{color:var(--ink)}
+
+  table{width:100%;border-collapse:collapse;margin-top:24px;font-size:14px}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+  th{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--ink3);font-weight:500}
+  td b{color:var(--ink)}
+  .scroll{overflow-x:auto}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+  <p class="eyebrow">Force v2 · wireframe walkthrough · 4 Aug 2026</p>
+  <h1>What the app actually does,<br>screen by screen.</h1>
+  <p class="lede">Every screen below is <strong>deliberately colourless</strong>. The palette and the motion design are the next two decisions, and drawing them now would quietly make those choices for you. What you're looking at is <strong>structure, flow, and the exact words the app says</strong> — because in this product the words are the feature.</p>
+  <div class="legend">
+    <span class="chip"><b>●</b> kept</span>
+    <span class="chip"><b>◐</b> broken</span>
+    <span class="chip"><b>○</b> unsettled</span>
+    <span class="chip">red notes = <b>why</b>, not what</span>
+    <span class="chip"><b>D#</b> = locked decision in FORCE-V2.md</span>
+  </div>
+</header>
+
+<!-- ============ 0. THE MODEL ============ -->
+<section>
+  <div class="sec-head"><span class="sec-num">00</span><h2>The model in one screen</h2></div>
+  <p class="sec-sub">Everything is built on one unit: a <strong>claim</strong> you've made about who you are, and the <strong>evidence</strong> each day either produces for it or doesn't. Habits aren't chores here — they're evidence.</p>
+
+  <div class="sm">
+    <div class="st">
+      <h4><span class="dot" style="background:var(--wfink)"></span>Kept</h4>
+      <p>You did it, and you said what you did. The day closes with something in it.</p>
+    </div>
+    <div class="st">
+      <h4><span class="dot" style="background:var(--wf3)"></span>Broken</h4>
+      <p>You showed up and lost. Spoken honestly. <b>Worth more to the system than a kept day</b> — it's the only kind of data that can change anything.</p>
+    </div>
+    <div class="st">
+      <h4><span class="dot" style="border:1.5px solid var(--wf3)"></span>Unsettled</h4>
+      <p>You didn't answer. Not the same as broken. A run of these means <b>the app is dying</b> — the one thing v1 could never see about itself.</p>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note"><b>D2 · the atomic unit</b>A good claim <b>names its own evidence and can be false.</b> “I take care of my body” can absorb any day, so it can never be broken — which means it can never be kept either.</div>
+    <div class="note"><b>D12 · never miss twice</b>First miss: <b>nothing happens.</b> No colour change, no broken-streak graphic, no reminder. Second consecutive: the gate opens into conversation. Third: the claim goes on trial.</div>
+  </div>
+</section>
+
+<!-- ============ 1. ONBOARDING ============ -->
+<section>
+  <div class="sec-head"><span class="sec-num">01</span><h2>Night one — you talk, it listens</h2></div>
+  <p class="sec-sub">You don't type a contract into an empty box. You talk. The machine's job is to find the sentence you already said and hand it back to you.</p>
+
+  <div class="stage three">
+    <div class="unit">
+      <p class="cap">1 · the yap <span class="tag">mobile</span></p>
+      <div class="phone"><div class="screen">
+        <div class="notch"></div>
+        <p class="wf-label">Question 2 of 4</p>
+        <div style="height:14px"></div>
+        <p class="claim" style="font-size:17px">What's the thing you keep meaning to do and keep not doing?</p>
+        <div class="spacer"></div>
+        <div class="meter">
+          <i style="height:8px"></i><i style="height:19px"></i><i style="height:31px"></i><i style="height:14px"></i><i style="height:38px"></i><i style="height:23px"></i><i style="height:41px"></i><i style="height:16px"></i><i style="height:29px"></i><i style="height:11px"></i><i style="height:34px"></i><i style="height:20px"></i><i style="height:27px"></i><i style="height:9px"></i><i style="height:18px"></i>
+        </div>
+        <div style="height:14px"></div>
+        <p class="said" style="text-align:center">0:47 · keep going, there's no limit</p>
+        <div style="height:16px"></div>
+        <div class="btn solid">Recording</div>
+        <div style="height:10px"></div>
+        <p class="link">Type instead</p>
+      </div></div>
+    </div>
+
+    <div class="unit">
+      <p class="cap">2 · everything you named <span class="tag">NEW</span></p>
+      <div class="phone"><div class="screen">
+        <div class="notch"></div>
+        <p class="wf-label">You talked about 7 things</p>
+        <div style="height:12px"></div>
+        <div class="col g6">
+          <div class="box fill" style="padding:9px"><b>The gym</b> · nobody makes you go
+            <div style="height:4px"></div><span style="color:var(--wfink)">We'd start here</span></div>
+          <div class="box" style="padding:9px"><b>Finding a job</b> · nobody chases you</div>
+          <div class="box" style="padding:9px"><b>Seeing people</b> · slips quietly</div>
+          <div class="box" style="padding:9px;opacity:.55"><b>Uni work</b> · deadlines already force this</div>
+          <div class="box" style="padding:9px;opacity:.55"><b>Client work</b> · people are waiting on you</div>
+          <div class="box" style="padding:9px;opacity:.55"><b>The club</b> · meetings already force this</div>
+          <div class="box" style="padding:9px;opacity:.55"><b>Sleep</b> · sits under all of them</div>
+        </div>
+        <div style="height:10px"></div>
+        <p class="said">The faded ones already have something forcing them. Force is for the ones nobody chases you about.</p>
+      </div></div>
+    </div>
+
+    <div class="unit">
+      <p class="cap">3 · pick your one <span class="tag">D4</span></p>
+      <div class="phone"><div class="screen">
+        <div class="notch"></div>
+        <p class="wf-label">Start with the gym</p>
+        <div style="height:12px"></div>
+        <div class="col g10">
+          <div class="box fill">
+            <b>I am someone who trains when I don't feel like it.</b>
+            <div style="height:6px"></div>you said: “the days I actually go are the days I almost didn't”
+          </div>
+          <div class="box">
+            <b>I am someone who moves every day, even a little.</b>
+            <div style="height:6px"></div>you said: “some days I just need to not sit still”
+          </div>
+        </div>
+        <div style="height:12px"></div>
+        <p class="wf-label">Keeping quietly in the background</p>
+        <div style="height:6px"></div>
+        <div class="box" style="padding:8px"><b>Finding a job</b> · <b>Seeing people</b></div>
+        <div class="spacer"></div>
+        <div class="btn">Edit this sentence</div>
+      </div></div>
+    </div>
+
+    <div class="unit">
+      <p class="cap">4 · commit</p>
+      <div class="phone"><div class="screen">
+        <div class="notch"></div>
+        <p class="wf-label">For the next 28 days</p>
+        <div class="spacer"></div>
+        <p class="claim">I am someone who trains when I don't feel like it.</p>
+        <div style="height:18px"></div>
+        <p class="said">You can reword this any time. You can't retire it until 2 September, and when you do you'll have to say why out loud.</p>
+        <div class="spacer"></div>
+        <div class="btn solid">Commit</div>
+        <div style="height:10px"></div>
+        <p class="link">Not this one — go back</p>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note"><b>the attribution is the mechanic</b>Every candidate is shown <b>with the quote it came from.</b> That's the proof it came out of your mouth, not the model's — and ownership is the thing v1 never had. <code>If it can't cite you, it doesn't get to propose it.</code></div>
+    <div class="note"><b>D9 · commit night one, sharpen day seven</b>Nothing says “provisional”. The felt sense of committing is load-bearing. Day 7 is the first time the app makes you look at whether the words are right — you can rewrite, but not quit.</div>
+    <div class="note"><b>D4 · what gets a claim</b>Only life areas <b>nothing else enforces.</b> Studies, client work and the club enforce themselves. Health, the job hunt and relationships don't — and that's the whole list.</div>
+  </div>
+</section>
+
+<!-- ============ 2. THE DAILY LOOP ============ -->
+<section>
+  <div class="sec-head"><span class="sec-num">02</span><h2>The loop — two beats, one gate</h2></div>
+  <p class="sec-sub">Morning is a whisper: ten seconds, no lock, one line. Evening is the wall. <strong>Exactly one gate a day</strong> — v1 ran six to nine, which is precisely why you learned to scroll past it.</p>
+
+  <div class="stage three">
+    <div class="unit">
+      <p class="cap">morning · ~10s <span class="tag">no lock</span></p>
+      <div class="phone"><div class="screen">
+        <div class="notch"></div>
+        <div class="row" style="justify-content:space-between">
+          <p class="wf-label">Tue 4 Aug</p>
+          <div class="marks">
+            <span class="mk kept"></span><span class="mk kept"></span><span class="mk broken"></span>
+            <span class="mk kept"></span><span class="mk unset"></span><span class="mk kept"></span>
+            <span class="mk unset today"></span>
+          </div>
+        </div>
+        <div class="spacer"></div>
+        <p class="claim">I am someone who trains when I don't feel like it.</p>
+        <div style="height:20px"></div>
+        <p class="wf-label">One thing today that would prove it</p>
+        <div style="height:8px"></div>
+        <div class="box fill"><b>Gym after the 4pm shift.</b></div>
+        <div class="spacer"></div>
+        <div class="btn ghost">Change it</div>
+        <div style="height:10px"></div>
+        <div class="btn solid">That's the plan</div>
+      </div></div>
+    </div>
+
+    <div class="unit">
+      <p class="cap">evening · idle <span class="tag">the gate</span></p>
+      <div class="phone"><div class="screen">
+        <div class="notch"></div>
+        <div class="row" style="justify-content:space-between">
+          <p class="wf-label">Tue 4 Aug</p>
+          <div class="marks">
+            <span class="mk kept"></span><span class="mk kept"></span><span class="mk broken"></span>
+            <span class="mk kept"></span><span class="mk unset"></span><span class="mk kept"></span>
+            <span class="mk unset today"></span>
+          </div>
+        </div>
+        <div class="spacer"></div>
+        <p class="claim">I am someone who trains when I don't feel like it.</p>
+        <div style="height:16px"></div>
+        <p class="said">this morning you said:<em>“Gym after the 4pm shift.”</em></p>
+        <div class="spacer"></div>
+        <div class="btn solid">Hold to speak</div>
+        <div style="height:12px"></div>
+        <p class="link">Not tonight</p>
+      </div></div>
+    </div>
+
+    <div class="unit">
+      <p class="cap">evening · speaking</p>
+      <div class="phone"><div class="screen">
+        <div class="notch"></div>
+        <p class="wf-label">Listening · 0:12</p>
+        <div class="spacer"></div>
+        <div class="meter">
+          <i style="height:6px"></i><i style="height:15px"></i><i style="height:28px"></i><i style="height:41px"></i><i style="height:22px"></i><i style="height:36px"></i><i style="height:12px"></i><i style="height:44px"></i><i style="height:31px"></i><i style="height:18px"></i><i style="height:39px"></i><i style="height:25px"></i><i style="height:33px"></i><i style="height:9px"></i><i style="height:21px"></i><i style="height:37px"></i><i style="height:14px"></i><i style="height:29px"></i>
+        </div>
+        <div style="height:22px"></div>
+        <div class="box" style="border-style:solid;background:var(--wf2)">
+          “Didn't want to go. Went anyway. Only did forty minutes because I was wrecked after the shift.”
+        </div>
+        <div class="spacer"></div>
+        <div class="row g10">
+          <div class="box" style="flex:1;padding:8px 10px"><b>Tempo</b><div style="height:3px"></div>Session logged 6:41pm · 4 sets</div>
+        </div>
+        <div style="height:12px"></div>
+        <div class="btn ghost">Release to finish</div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="stage three" style="margin-top:34px">
+    <div class="unit">
+      <p class="cap">evening · settle <span class="tag">D3</span></p>
+      <div class="phone"><div class="screen">
+        <div class="notch"></div>
+        <p class="wf-label">How did today land?</p>
+        <div class="spacer"></div>
+        <div class="box" style="border-style:solid;background:var(--wf2)">
+          “Didn't want to go. Went anyway. Only did forty minutes because I was wrecked after the shift.”
+        </div>
+        <div style="height:20px"></div>
+        <div class="col g10">
+          <div class="btn solid">Kept</div>
+          <div class="btn">Partial</div>
+          <div class="btn ghost">Broken</div>
+        </div>
+        <div class="spacer"></div>
+        <p class="said" style="text-align:center">You decide. It never grades you.</p>
+      </div></div>
+    </div>
+
+    <div class="unit">
+      <p class="cap">evening · closed</p>
+      <div class="phone"><div class="screen">
+        <div class="notch"></div>
+        <div class="row" style="justify-content:space-between">
+          <p class="wf-label">Settled · 11:24pm</p>
+          <div class="marks">
+            <span class="mk kept"></span><span class="mk kept"></span><span class="mk broken"></span>
+            <span class="mk kept"></span><span class="mk unset"></span><span class="mk kept"></span>
+            <span class="mk kept today"></span>
+          </div>
+        </div>
+        <div class="spacer"></div>
+        <p class="claim" style="font-size:17px">That's three tired sessions this week.</p>
+        <div style="height:14px"></div>
+        <p class="said">You closed this app after 1am on all three of those nights. Maybe the gym isn't the problem.</p>
+        <div class="spacer"></div>
+        <div class="btn ghost">Goodnight</div>
+      </div></div>
+    </div>
+
+    <div class="unit">
+      <p class="cap">the escape <span class="tag">D7</span></p>
+      <div class="phone"><div class="screen">
+        <div class="notch"></div>
+        <p class="wf-label">Wed 5 Aug · morning</p>
+        <div class="spacer"></div>
+        <p class="claim" style="font-size:19px">Yesterday didn't settle.</p>
+        <div style="height:18px"></div>
+        <div class="col g10">
+          <div class="btn">It was a bad day</div>
+          <div class="btn">It was a busy day</div>
+        </div>
+        <div style="height:16px"></div>
+        <p class="said">Two taps. Those two answers get completely different responses, and it's the only distinction that matters.</p>
+        <div class="spacer"></div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note"><b>D7 · there is no close button</b>There's a button that says <b>Not tonight.</b> One tap, no confirm dialog, no guilt copy — it closes instantly. The moment quitting the <em>night</em> gets expensive, you quit the <em>app</em> instead. <code>v1's App.swift:30 says “the no escape rule”. It produced total escape.</code></div>
+    <div class="note"><b>D3 · evidence is produced, not asserted</b>A checkbox can be ticked while your mind is elsewhere — that's the entire problem. Saying one specific sentence out loud makes you go and get the day out of your memory, and <b>that retrieval is the intervention</b>, not the paperwork around it.</div>
+    <div class="note"><b>Tempo fills itself in</b>Force never asks whether you trained. Your workout data is already connected, so it opens with the consequence instead of the question.</div>
+    <div class="note"><b>“I didn't” must always close the gate</b>If the only exit is success, you'll either lie to it or stop opening it — and v1 shows which one you pick.</div>
+    <div class="note"><b>D8 · 4am day boundary</b>A 12:30am evening beat belongs to <em>that</em> day, not the next one. Your shifts are chaos; the clock has to match the life or the app starts telling you you missed days you didn't.</div>
+    <div class="note"><b>D11 · what it's allowed to say</b>Only things impossible without your record. <b>“That's okay, keep it up” is banned</b> — that's a talking fortune cookie and you'd tune it out faster than the contract. Silence is a valid output.</div>
+  </div>
+</section>
+
+<!-- ============ 2b. THE OTHER TWO ============ -->
+<section>
+  <div class="sec-head"><span class="sec-num">02b</span><h2>The other two claims</h2></div>
+  <p class="sec-sub">You asked how the background claims get reinforced if there's only one gate. Here's the answer: <strong>they're never asked about — but they're always one tap away, and once a week they get a moment of their own.</strong></p>
+
+  <div class="stage three">
+    <div class="unit">
+      <p class="cap">morning · the quiet two</p>
+      <div class="phone"><div class="screen">
+        <div class="notch"></div>
+        <p class="wf-label">Tue 4 Aug</p>
+        <div class="spacer"></div>
+        <p class="claim">I am someone who trains when I don't feel like it.</p>
+        <div style="height:14px"></div>
+        <div class="box fill"><b>Gym after the 4pm shift.</b></div>
+        <div class="spacer"></div>
+        <p class="wf-label">Also true about you</p>
+        <div style="height:8px"></div>
+        <div class="col g6">
+          <div class="box" style="padding:8px 10px;display:flex;justify-content:space-between;align-items:center">
+            <span>I apply before I feel ready</span><span class="mk unset"></span></div>
+          <div class="box" style="padding:8px 10px;display:flex;justify-content:space-between;align-items:center">
+            <span>I reach out first</span><span class="mk unset"></span></div>
+        </div>
+        <div style="height:8px"></div>
+        <p class="said">Tap either one if you did it. Nothing asks you to.</p>
+      </div></div>
+    </div>
+
+    <div class="unit">
+      <p class="cap">sunday · their one moment</p>
+      <div class="phone"><div class="screen">
+        <div class="notch"></div>
+        <p class="wf-label">Sunday · your quiet two</p>
+        <div style="height:16px"></div>
+        <div class="col g10">
+          <div class="box">
+            <b>I apply before I feel ready</b>
+            <div style="height:6px"></div>2 days this week. You sent one on Tuesday.
+          </div>
+          <div class="box">
+            <b>I reach out first</b>
+            <div style="height:6px"></div>0 days this week. Same as last week.
+          </div>
+        </div>
+        <div style="height:16px"></div>
+        <p class="claim" style="font-size:16px">Two weeks of nothing on reaching out. Still true about you, or not any more?</p>
+        <div class="spacer"></div>
+        <div class="btn ghost">Hold to speak</div>
+        <div style="height:8px"></div>
+        <p class="link">Type instead</p>
+      </div></div>
+    </div>
+
+    <div class="unit">
+      <p class="cap">promotion · at 28 days</p>
+      <div class="phone"><div class="screen">
+        <div class="notch"></div>
+        <p class="wf-label">Your 28 days are up</p>
+        <div class="spacer"></div>
+        <p class="claim" style="font-size:18px">The gym one is holding. Want to leave it running and put something else in front?</p>
+        <div style="height:18px"></div>
+        <div class="col g10">
+          <div class="btn solid">Yes — make “I apply before I feel ready” the main one</div>
+          <div class="btn">No, stay on the gym</div>
+        </div>
+        <div style="height:14px"></div>
+        <p class="said">A claim that's holding doesn't need the gate any more. That's how it graduates.</p>
+        <div class="spacer"></div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note"><b>why they don't get their own gate</b>Three gates a night is three chances to feel behind, and you'd start closing all of them. <b>The primary is the one your mind drops.</b> The other two are still true about you; they just don't need defending this month.</div>
+    <div class="note"><b>the rotation is the point</b>Nothing is stuck as background forever. Every 28 days one can be promoted — and the one that's holding steps back, because <b>a claim that's working doesn't need a gate.</b></div>
+  </div>
+</section>
+
+<!-- ============ 3. ESCALATION ============ -->
+<section>
+  <div class="sec-head"><span class="sec-num">03</span><h2>When it stops being a whisper</h2></div>
+  <p class="sec-sub">Most nights the gate is thirty seconds and it gets out of your way. That's what buys it the right to not get out of your way on the nights that matter — and you can never predict which night that is.</p>
+
+  <div class="stage two">
+    <div class="unit">
+      <p class="cap">second consecutive miss <span class="tag">D6 · D12</span></p>
+      <div class="phone"><div class="screen">
+        <div class="notch"></div>
+        <p class="wf-label">Thu 7 Aug</p>
+        <div style="height:16px"></div>
+        <div class="col g10" style="flex:1">
+          <div class="bub them">Two in a row now. I'm not going to pretend that's nothing.</div>
+          <div class="bub them">Both nights you closed without answering rather than telling me it went badly. What's actually going on?</div>
+          <div class="bub you">work's been insane, I've been getting home at 1</div>
+          <div class="bub them">Then the claim isn't the problem — the week is. Do you want to hold the sentence and ride it out, or narrow it to something a 1am week can't break?</div>
+        </div>
+        <div style="height:12px"></div>
+        <div class="row g6">
+          <div class="btn ghost" style="flex:1">Hold to reply</div>
+          <div class="btn ghost" style="flex:none;padding:10px 13px">Type</div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="unit">
+      <p class="cap">the trial · third miss <span class="tag">D12</span></p>
+      <div class="phone"><div class="screen">
+        <div class="notch"></div>
+        <p class="wf-label">The claim goes on trial</p>
+        <div class="spacer"></div>
+        <p class="claim" style="font-size:18px">Three in a row. Is this claim wrong, or is this week wrong?</p>
+        <div style="height:20px"></div>
+        <div class="col g10">
+          <div class="btn">The claim is miscalibrated</div>
+          <div class="btn">The week is hostile</div>
+        </div>
+        <div style="height:16px"></div>
+        <p class="said">Miscalibrated → you rewrite the wording, free, right now. Hostile week → it backs off instead of pushing.</p>
+        <div class="spacer"></div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note"><b>escalation is earned by data, never random</b>The gate opens into conversation on exactly five triggers: the day broke, the testimony was vague, Tempo contradicts you, second consecutive miss, or the 28-day review is due. Every one is a moment a human who cared about you would say something.</div>
+    <div class="note"><b>strict mode is never offered here</b>Suggesting the daytime-interruption tier right after you've failed reads as punishment, and you'd feel handled. It lives in settings, gets mentioned once at onboarding, and is never brought up again. <code>You go looking for it on a good day.</code></div>
+  </div>
+</section>
+
+<!-- ============ 4. THE RECORD ============ -->
+<section>
+  <div class="sec-head"><span class="sec-num">04</span><h2>The record — Mac and web</h2></div>
+  <p class="sec-sub">A month of your own testimony laid out is the thing you'd actually want to sit with. It's the natural home for the reviews — and the one place a big screen genuinely beats a phone.</p>
+
+  <div class="stage two">
+    <div class="unit">
+      <p class="cap">the record <span class="tag">D14 · web</span></p>
+      <div class="mac">
+        <div class="bar"><i></i><i></i><i></i></div>
+        <div class="screen">
+          <div class="row" style="justify-content:space-between;align-items:flex-start">
+            <div>
+              <p class="wf-label">Primary claim · day 19 of 28</p>
+              <div style="height:8px"></div>
+              <p class="claim" style="font-size:20px">I am someone who trains when I don't feel like it.</p>
+            </div>
+            <div class="box" style="text-align:center;flex:none;padding:9px 13px">
+              <b style="font-size:20px">11</b><div style="height:2px"></div>days kept
+            </div>
+          </div>
+          <div style="height:20px"></div>
+          <div class="marks" style="flex-wrap:wrap;gap:5px">
+            <span class="mk kept"></span><span class="mk kept"></span><span class="mk kept"></span><span class="mk broken"></span><span class="mk kept"></span><span class="mk kept"></span><span class="mk unset"></span><span class="mk kept"></span><span class="mk kept"></span><span class="mk broken"></span><span class="mk unset"></span><span class="mk kept"></span><span class="mk kept"></span><span class="mk kept"></span><span class="mk broken"></span><span class="mk kept"></span><span class="mk unset"></span><span class="mk kept"></span><span class="mk kept"></span>
+          </div>
+          <div style="height:20px"></div>
+          <div class="col g6">
+            <div class="box"><b>Mon 3 Aug · kept</b><div style="height:4px"></div>“Didn't want to go. Went anyway. Forty minutes, wrecked after the shift.”</div>
+            <div class="box"><b>Sun 2 Aug · broken</b><div style="height:4px"></div>“Slept till noon, wrote it off. Not going to dress it up.”</div>
+          </div>
+          <div style="height:16px"></div>
+          <div class="box" style="border-color:var(--redline)">
+            <b>Pattern</b><div style="height:4px"></div>Every tired session this month followed a night you were up past midnight. Three of your four broken days were Sundays.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="unit">
+      <p class="cap">day 28 · retirement window <span class="tag">D4</span></p>
+      <div class="mac">
+        <div class="bar"><i></i><i></i><i></i></div>
+        <div class="screen">
+          <p class="wf-label">28 days · the pursuit is unlocked</p>
+          <div style="height:14px"></div>
+          <p class="claim" style="font-size:20px">I am someone who trains when I don't feel like it.</p>
+          <div style="height:16px"></div>
+          <div class="box fill">19 kept · 5 broken · 4 unsettled. You defended this on two thirds of the days you had.</div>
+          <div style="height:18px"></div>
+          <div class="col g10">
+            <div class="btn solid">Keep going — another 28</div>
+            <div class="btn">Sharpen the wording</div>
+            <div class="btn ghost">Retire it</div>
+          </div>
+          <div style="height:16px"></div>
+          <div class="box" style="border-color:var(--redline)">
+            <b>Retiring costs one thing.</b><div style="height:4px"></div>You say out loud what the evidence showed and why you're stopping. It goes into your record permanently — not as punishment, but because a log of what you've abandoned and why is the most useful document about you that could exist.
+          </div>
+          <div class="spacer"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note"><b>the gate never lives on the web</b>If you can settle your day in a browser tab, the gate loses scarcity and you'd close days half-watching something else. That's reflex-ticking with extra steps — v1's death, faithfully reproduced in a new medium.</div>
+    <div class="note"><b>web does what a big screen is for</b>Reading the record, statistics, wording edits, account and billing. <b>Never commitments.</b></div>
+  </div>
+</section>
+
+<!-- ============ 5. THE COUNSEL ============ -->
+<section>
+  <div class="sec-head"><span class="sec-num">05</span><h2>The Counsel — for when you're stuck</h2></div>
+  <p class="sec-sub">Your words: <em>“You should not be the one helping me organise my thoughts. Force should be.”</em> This is that surface. It only works because the loop feeds it — any chatbot can debate two options with you; only this one has your record.</p>
+
+  <div class="stage two">
+    <div class="unit">
+      <p class="cap">stuck</p>
+      <div class="mac">
+        <div class="bar"><i></i><i></i><i></i></div>
+        <div class="screen">
+          <div class="col g10" style="flex:1">
+            <div class="bub you" style="max-width:70%">I've got the certification and the gym thing both on this month and I can't do both properly</div>
+            <div class="bub them" style="max-width:80%">Before I answer that — the cert has a deadline and a fee attached. Nobody is chasing you about the gym. One of those enforces itself.</div>
+            <div class="bub them" style="max-width:80%">Want me to argue both sides properly, or have you already decided and you're looking for permission?</div>
+            <div class="bub you" style="max-width:55%">argue it</div>
+          </div>
+          <div style="height:12px"></div>
+          <div class="btn ghost">Hold to speak</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="unit">
+      <p class="cap">the debate <span class="tag">parked idea, now placed</span></p>
+      <div class="mac">
+        <div class="bar"><i></i><i></i><i></i></div>
+        <div class="screen">
+          <p class="wf-label">Two cases · watch which one you flinch at</p>
+          <div style="height:14px"></div>
+          <div class="col g10">
+            <div class="box"><b>Do the certification</b><div style="height:5px"></div>It has a date. It has a fee. It counts toward staying in the country. Miss it and you wait months for the next one.</div>
+            <div class="box"><b>Keep the gym</b><div style="height:5px"></div>You started this 19 days ago. You've gone on 11 of them. There are 9 days left. Stop now and you never find out if it would have stuck.</div>
+          </div>
+          <div style="height:16px"></div>
+          <p class="wf-label">So what do you want to do?</p>
+          <div style="height:8px"></div>
+          <div class="col g6">
+            <div class="btn solid">Swap — the cert becomes my main one</div>
+            <div class="btn">Keep the gym, shrink it to 15 minutes</div>
+            <div class="btn ghost">Neither. Ask me something else.</div>
+          </div>
+          <div style="height:12px"></div>
+          <p class="said">It never picks for you. But you don't leave without deciding.</p>
+          <div class="spacer"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note"><b>the scope boundary that keeps this alive</b>Force does not answer <em>“what should I do at 2pm.”</em> You have a calendar for that, and any app that tries to own your task list becomes a task list. Force answers <b>“which part of me am I defending this month, and is that still right.”</b></div>
+    <div class="note"><b>choosing your primary claim IS the prioritisation act</b>Everything below it is downstream — you already know what to do once you know who you're being.</div>
+  </div>
+</section>
+
+<!-- ============ 6. WHAT'S NOT HERE ============ -->
+<section>
+  <div class="sec-head"><span class="sec-num">06</span><h2>What's deliberately missing</h2></div>
+  <p class="sec-sub">Things that exist in the plan but aren't drawn yet, so you know they weren't forgotten.</p>
+  <div class="scroll">
+  <table>
+    <tr><th>Not drawn</th><th>Why</th></tr>
+    <tr><td><b>Colour</b></td><td>The palette is the next decision. Three day-states need to be expressible, which the old monochrome system physically can't do — <code>Theme.swift:69</code> maps accent, info and sale all to ink.</td></tr>
+    <tr><td><b>Motion</b></td><td>The settle animation is the emotional centre of the gate and deserves its own pass. The Flutter showcase is being built for exactly this.</td></tr>
+    <tr><td><b>Background claims</b></td><td>Two quiet claims accumulate evidence without being interrogated. Only the primary gets the gate's attention.</td></tr>
+    <tr><td><b>Strict mode</b></td><td>The opt-in daytime-interruption tier. Deliberately buried in settings.</td></tr>
+    <tr><td><b>Settings, the register dial, voice picking</b></td><td>Four voices chosen for stance, not demographics. Possibly the same control as the register dial — that's a prototype question, not a spec one.</td></tr>
+    <tr><td><b>Writing and photographing a journal</b></td><td>Agreed and adopted: <b>speaking, typing, and photographing a handwritten page</b> are all first-class ways to answer. Some people think by writing. A photo of a page you actually wrote is the strongest evidence there is. Not drawn yet.</td></tr>
+    <tr><td><b>Recall</b></td><td>Your other app. Noted, not designed. Separate conversation.</td></tr>
+    <tr><td><b>Windows &amp; Android layouts</b></td><td>Flutter renders identically across all three, so the phone frames above <em>are</em> the Android layout.</td></tr>
+  </table>
+  </div>
+
+  <div class="ask">
+    <h3>What I need from you</h3>
+    <ol>
+      <li><b>Where does this feel wrong?</b> Not "is it good" — where would you, specifically, bounce off it at 11pm on a bad night.</li>
+      <li><b>Are the words right?</b> The copy on these screens is the product. If a sentence sounds like an app talking, say so and I'll cut it.</li>
+      <li><b>Is anything missing that you expected to see</b> — a screen you assumed existed and can't find here.</li>
+      <li><b>Is there too much?</b> The fastest way to kill this is to ship all of it. Tell me which sections you'd defer and I'll scope v1 down to the loop.</li>
+    </ol>
+  </div>
+</section>
+
+</div>

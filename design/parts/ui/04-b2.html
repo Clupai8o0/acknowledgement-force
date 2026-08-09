@@ -1,0 +1,178 @@
+<style>
+.settle{position:relative;height:190px;width:100%;touch-action:none;user-select:none}
+.tgt{position:absolute;top:50%;transform:translateY(-50%);width:132px;height:132px;
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  box-shadow:inset 0 0 0 1px var(--rule);transition:box-shadow .2s,background-color .2s}
+.tgt[data-tgt=kept]{left:8px}
+.tgt[data-tgt=broken]{right:8px}
+.tgt .tw{font-size:15px;letter-spacing:2.4px;text-transform:uppercase;color:var(--ink3);
+  font-variation-settings:'wght' 560,'opsz' 15}
+.tgt.hot{box-shadow:inset 0 0 0 1px #454C52;background:#141618}
+.tgt.hot .tw{color:var(--ink2)}
+.mark{position:absolute;width:30px;height:30px;border-radius:50%;background:var(--ink);
+  left:0;top:0;cursor:grab;box-shadow:0 0 0 0 rgba(237,234,228,.18)}
+.mark:active{cursor:grabbing}
+.mark.is-broken{background:var(--broken)}
+.mark.committed{transition:opacity .28s;opacity:0}
+.settle .hint{position:absolute;left:0;right:0;bottom:-4px;text-align:center;font-size:15px;
+  color:var(--ink3)}
+</style>
+
+<!-- ══════════════════════════ B4 ══════════════════════════ -->
+<article class="plate" id="b4">
+  <div class="plate-head"><span class="no">B4</span><h3 class="pt">Settling — Fling</h3></div>
+  <div class="chips"><span class="chip">D20 fling</span><span class="chip">D7 three states</span>
+    <span class="chip">D12 silence</span></div>
+  <p class="cap"><em class="k">Pick the mark up and throw it.</em> Real spring physics integrated
+    per frame — no CSS curve, no <code class="h">Curve</code>, nothing eased. The fling velocity
+    goes straight into the spring, so a hard throw overshoots and a gentle one does not. There is
+    a 620&nbsp;ms window before it commits, and changing your mind inside it redirects rather than
+    restarts.</p>
+
+  <div class="stage">
+    <div class="devbox"><div class="dev panel" data-scene="settle">
+      <div class="app" style="padding:38px 52px 30px;gap:0">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <span class="eyebrow">Tuesday · day 19</span>
+          <span class="quiet num">11:49pm</span>
+        </div>
+        <div style="margin-top:22px">
+          <span class="eyebrow">You said</span>
+          <p class="said" style="margin-top:8px;max-width:44ch;color:var(--ink)">legs were dead
+            honestly. went anyway, didn't want to. did the session, cut the last set.</p>
+        </div>
+        <div class="settle" data-settle style="margin-top:auto;margin-bottom:auto;height:236px">
+          <div class="tgt" data-tgt="kept"><span class="tw">Kept</span></div>
+          <div class="tgt" data-tgt="broken"><span class="tw">Broken</span></div>
+          <div class="mark" data-mark></div>
+          <p class="hint" data-hint>drag it, or throw it</p>
+        </div>
+        <hr>
+        <div style="margin-top:22px;display:flex;align-items:flex-end;justify-content:space-between">
+          <div class="strip" data-strip="settle">
+            <div class="d"><i class="m kept"></i><span class="dl">W</span></div>
+            <div class="d"><i class="m kept"></i><span class="dl">T</span></div>
+            <div class="d"><i class="m broken"></i><span class="dl">F</span></div>
+            <div class="d"><i class="m kept"></i><span class="dl">S</span></div>
+            <div class="d"><i class="m unsettled"></i><span class="dl">S</span></div>
+            <div class="d"><i class="m kept"></i><span class="dl">M</span></div>
+            <div class="d today"><i class="m none" data-slot></i><span class="dl">T</span></div>
+          </div>
+          <button class="btn plain">Not tonight</button>
+        </div>
+      </div>
+    </div></div>
+
+    <aside class="notes">
+      <h5>Underdamped, once, then still</h5>
+      <p>A few percent of overshoot, one time, and at rest fast enough that you are not waiting
+        on it. Two overshoots or a visible wobble has left D20 regardless of what the numbers
+        say. The constants are not written here on purpose — they live in
+        <code class="h">settle_scene.dart</code> and a number copied into prose is wrong the first
+        afternoon someone tunes it.</p>
+      <h5>Why it must be a throw</h5>
+      <p>This is the piece that makes the settle an act rather than a confirmation. A
+        <code class="h">broken</code> day you threw into the strip lands differently from one you
+        placed there — and you did that, not the app.</p>
+      <h5>Then the app says nothing</h5>
+      <p>The mark lands and the panel goes. No closing line, no summary, no "see you tomorrow".
+        Under Principle 3 there is nothing in the record tonight that is worth a sentence, and
+        silence is the default output, not the fallback.</p>
+      <p class="dim" style="font-size:15px">Flutter's own spring can't do this —
+        <code class="h">animateWith(SpringSimulation)</code> cannot retarget mid-flight, which is
+        the entire reason to use a spring. Force writes its own simulation clock seeded from
+        current position <em class="k">and</em> velocity.</p>
+      <button class="replay" data-replay="b4">Reset the mark</button>
+    </aside>
+  </div>
+</article>
+
+<!-- ══════════════════════════ B5 ══════════════════════════ -->
+<article class="plate" id="b5">
+  <div class="plate-head"><span class="no">B5</span><h3 class="pt">Not tonight</h3></div>
+  <div class="chips"><span class="chip">D7 the escape hatch</span>
+    <span class="chip">D7 never hard-lock</span></div>
+  <p class="cap">One tap. No confirm dialog, no guilt copy, no "are you sure". The day logs as
+    <code class="h">unsettled</code> and the panel is gone. There is nothing else to show, which
+    is the design.</p>
+
+  <div class="stage">
+    <div class="devbox"><div class="dev panel">
+      <div class="app" style="padding:40px 52px 32px;gap:0;opacity:.34;filter:blur(1.2px)">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <span class="eyebrow">Tuesday · day 19</span><span class="quiet num">11:48pm</span>
+        </div>
+        <p class="claim" style="margin-top:52px;max-width:19ch">I am someone who trains
+          <span class="emph drawn">when I don't feel like it</span>.</p>
+        <div style="margin-top:auto;display:flex;align-items:flex-end;justify-content:space-between">
+          <div class="strip">
+            <div class="d"><i class="m kept"></i><span class="dl">W</span></div>
+            <div class="d"><i class="m kept"></i><span class="dl">T</span></div>
+            <div class="d"><i class="m broken"></i><span class="dl">F</span></div>
+            <div class="d"><i class="m kept"></i><span class="dl">S</span></div>
+            <div class="d"><i class="m unsettled"></i><span class="dl">S</span></div>
+            <div class="d"><i class="m kept"></i><span class="dl">M</span></div>
+            <div class="d today"><i class="m unsettled"></i><span class="dl">T</span></div>
+          </div>
+        </div>
+      </div>
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+        <button class="btn plain" style="font-size:19px;color:var(--ink2)">Not tonight</button>
+      </div>
+    </div></div>
+
+    <aside class="notes">
+      <h5>The exit is a statement, not a dismissal</h5>
+      <p>It says <em class="k">Not tonight</em>. It does not say Skip, Close, Later, Maybe
+        tomorrow or Remind me. Those are all ways of not answering; this is an answer.</p>
+      <h5>unsettled is not broken</h5>
+      <p>Broken means you showed up and lost. Unsettled means you didn't show up. Conflating them
+        corrupts the record — and unsettled is the more diagnostic of the two, because a run of
+        unsettled days is <em class="k">the app dying</em>, and that is the one thing v1 could
+        never see about itself.</p>
+      <h5>The machine is never locked</h5>
+      <p>macOS offers <code class="h">windowShouldClose → false</code> and
+        <code class="h">.terminateCancel</code>; the strict-mode spike verified both work.
+        Force does not take them. A gate blocking a machine you earn money on is a hostage
+        situation with your income attached — and v1's <code class="h">// the "no escape" rule</code>
+        produced exactly one outcome: total escape.</p>
+    </aside>
+  </div>
+</article>
+
+<!-- ══════════════════════════ B6 ══════════════════════════ -->
+<article class="plate" id="b6">
+  <div class="plate-head"><span class="no">B6</span><h3 class="pt">The morning after an unsettled day</h3></div>
+  <div class="chips"><span class="chip">D7 rule 3</span><span class="chip">D5 day-close-based</span></div>
+  <p class="cap">Not the same question again. One smaller, different one, with two answers that
+    deserve completely different responses — and it is the only distinction that matters.</p>
+
+  <div class="stage">
+    <div class="devbox"><div class="dev small">
+      <div class="app" style="padding:30px 34px;gap:20px">
+        <span class="eyebrow">Wednesday · day 20</span>
+        <h4 class="title" style="max-width:20ch">Yesterday didn't settle. Bad day, or busy day?</h4>
+        <div style="display:flex;gap:12px;margin-top:auto">
+          <button class="btn">Bad day</button>
+          <button class="btn">Busy day</button>
+        </div>
+        <p class="quiet">two taps and it's closed</p>
+      </div>
+    </div></div>
+
+    <aside class="notes">
+      <h5>Why two buttons and not a microphone</h5>
+      <p>This is a repair, not a beat. Re-showing last night's question builds a nag, and asking
+        someone to speak about a day they already declined to speak about is the same question in
+        a costume.</p>
+      <h5>The two answers go different places</h5>
+      <p><em class="k">Bad day</em> is a day that happened and hurt — the record keeps it and the
+        app says nothing more. <em class="k">Busy day</em> is the app's own early warning: two of
+        those in a row and the gate is arriving at a time that doesn't fit your life, which is a
+        problem with the schedule, not with you.</p>
+      <h5>Nothing happens after one</h5>
+      <p>D12: on a first miss, genuinely nothing. No colour change, no "streak broken", no gentle
+        reminder. This screen is the entire response.</p>
+    </aside>
+  </div>
+</article>

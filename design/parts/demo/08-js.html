@@ -1,0 +1,922 @@
+<script>
+(() => {
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const CSS_ = getComputedStyle(document.documentElement);
+const TOK = n => CSS_.getPropertyValue('--' + n).trim();
+const clamp01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
+
+/* ════════════════════════ Ink Bloom ════════════════════════
+   D20 fixes the moment, the duration (~1.15 s) and "no stagger". It does not
+   fix the SHAPE of the curve, and the shape is the whole complaint: on the
+   house curve — cubic-bezier(.16,1,.3,1), an expo-out — 90% of the blur
+   collapses in the first quarter of the duration, so a 1.15 s bloom is
+   visually over in 280 ms.
+
+   What replaces it holds the haze. `shape` blends a straight line into
+   smoothstep into smootherstep; at the default the sentence is still 84% blurred
+   a quarter of the way through and does not become readable until past halfway.
+   `lead` runs the opacity clock slightly ahead of the focus clock, so the ink
+   darkens a little before it sharpens — which is what ink does.
+
+   Technique is DESIGN.md's: transparent fill plus a zero-offset shadow, so at
+   blur 0 the shadow IS the glyph. The fill never fades in alongside the blur —
+   that produces a glow, and it is the bug this started as. */
+const B = { dur: 950, blurK: 1.30, shape: .55, lead: .12 };
+/* one multiplier over every entrance stagger in the product, so the whole
+   choreography can be dialled from nothing to twice as loose in one place */
+const MOT = { stag: 1 };
+const PROFILES = {
+  now:    { dur: 950,  blurK: 1.30, shape: .55, lead: .12 },
+  record: { dur: 1150, blurK: 1.30, shape: .55, lead: .12 },
+  old:    { dur: 950,  blurK: 1.33, shape: 0,   lead: .55 },
+};
+/* the entrance duration, so JS can budget what CSS is actually doing */
+const ARRIVE = 620;
+const smoothstep   = t => t * t * (3 - 2 * t);
+const smootherstep = t => t * t * t * (t * (t * 6 - 15) + 10);
+function shaped(t) {
+  const s = clamp01(t);
+  if (B.shape <= .5) { const k = B.shape * 2; return s * (1 - k) + smoothstep(s) * k; }
+  const k = (B.shape - .5) * 2; return smoothstep(s) * (1 - k) + smootherstep(s) * k;
+}
+const INK = TOK('ink');
+
+/* HOW it is driven matters as much as the curve. A per-frame JS driver is the
+   obvious way to make the shape tunable, and it is the wrong way: a throttled
+   or backgrounded tab starves requestAnimationFrame completely, and a sentence
+   parked at opacity 0 waiting for a frame that never comes is invisible. That
+   failure looks exactly like "the bloom doesn't work" — which is where this
+   started.
+
+   So the curve is COMPILED into a real @keyframes rule, sixteen stops on a
+   linear clock, and the browser runs it off the style engine. The blur is in
+   `em`, so one rule serves a 21px claim and a 48px one without measuring
+   anything. The tuner recompiles the rule; nothing else changes. */
+const kf = document.createElement('style');
+document.head.appendChild(kf);
+const STOPS = 16;
+function compileBloom() {
+  let out = '';
+  for (let i = 0; i <= STOPS; i++) {
+    const t = i / STOPS, s = shaped(t);
+    out += `${(t * 100).toFixed(2)}%{text-shadow:0 0 ${(B.blurK * (1 - s)).toFixed(4)}em var(--ink);`
+         + `opacity:${clamp01(shaped(t * (1 + B.lead))).toFixed(3)}}`;
+  }
+  kf.textContent = `@keyframes inkbloom{${out}}`;
+}
+
+function endBloom(el) {
+  clearTimeout(el._bt);
+  el.style.animation = ''; el.style.animationPlayState = ''; el.style.animationDelay = '';
+  el.classList.add('settled');
+}
+/* Reduce Motion suppresses motion that happens TO you. Pressing a button
+   labelled "play it" is a request, not an ambush, so `force` overrides it. */
+function bloom(el, force, delay = 0, ruleAt) {
+  clearTimeout(el._rt);
+  el.classList.add('bloom');
+  el.classList.remove('settled');
+  const rule = el.querySelector('[data-emph]');
+  if (rule) rule.classList.remove('drawn');
+  if (RM && !force) { endBloom(el); if (rule) rule.classList.add('drawn'); return; }
+  el.style.animation = 'none';
+  void el.offsetWidth;                     /* restart from the top */
+  el.style.animationPlayState = ''; el.style.animationDelay = '';
+  el.style.animation = `inkbloom ${B.dur}ms linear ${delay}ms both`;
+  clearTimeout(el._bt);
+  el._bt = setTimeout(() => endBloom(el), B.dur + 260);
+  el.addEventListener('animationend', () => endBloom(el), { once: true });
+  /* D20: the rule begins ~0.9 s AFTER the bloom settles. The gap is the point —
+     the sentence lands and is read whole, then the app goes back over it and
+     puts its finger on the half that today can break. */
+  if (rule && ruleAt !== false)
+    el._rt = setTimeout(() => rule.classList.add('drawn'),
+      ruleAt === undefined ? delay + B.dur + RULE_GAP : ruleAt);
+}
+/* park the animation at a fraction of its timeline, so the curve can be looked
+   at rather than only reasoned about */
+function freezeBloom(el, f) {
+  bloom(el, true);
+  clearTimeout(el._bt);
+  clearTimeout(el._rt);          /* a frozen frame must not grow a rule 2s later */
+  el.querySelector('[data-emph]')?.classList.remove('drawn');
+  el.style.animationPlayState = 'paused';
+  el.style.animationDelay = `-${(f * B.dur).toFixed(0)}ms`;
+}
+
+/* ════════════════════════ the quiet arrivals ════════════════════════
+   Everything that is not the sentence rises after it starts and before it
+   finishes, so the screen composes while the claim is still a haze and the
+   claim is the last thing to become legible. That ordering is the whole reason
+   it does not read as a light show. */
+/* ── the order of a screen ────────────────────────────────────────────────
+   The sentence arrives first, ALONE, on an otherwise empty surface. Only when
+   it has resolved does the rest of the screen compose around it, and only
+   after that does the app underline the half that can be wrong.
+
+   This costs nothing. D20 already spends 0.9s between the bloom settling and
+   the rule drawing — the gap was always there and it was always empty. The
+   composition now happens inside it, so the screen is complete at the same
+   moment it was before. What changed is that the claim no longer shares its
+   entrance with the furniture.
+
+   SPREAD caps how long any one sweep may take, whatever it is sweeping: seven
+   marks or forty. It used to be 340ms, which was the budget left over inside
+   D20's 0.9s gap — and 340ms across forty marks is 8ms a mark, which is not a
+   stagger, it is a flicker. The gap is a MINIMUM, not a schedule: D20 fixes
+   that the rule comes after the sentence has landed and been read whole, and
+   the rule now waits for the whole screen to finish composing instead of for a
+   stopwatch. So the sweep gets the room it needs and the rule is still the last
+   thing that happens. */
+const SPREAD = 900, SETTLE_BEAT = 40, RULE_GAP = 900, RULE_AFTER_COMPOSE = 130;
+
+function rises(scene, after) {
+  /* a `.rise` inside a staggered container would animate twice, once as itself
+     and once as one of its parent's children */
+  const els = $$('.rise', scene).filter(el =>
+    !el.closest('[data-stagger]') && (el.offsetParent !== null || el.offsetWidth));
+  els.forEach(el => el.classList.remove('up'));
+  if (RM) { els.forEach(el => el.classList.add('up')); return; }
+  void scene.offsetWidth;
+  const step = Math.min(95 * MOT.stag, SPREAD / Math.max(1, els.length - 1));
+  els.forEach((el, i) => {
+    el.style.transitionDelay = Math.round(after + i * step) + 'ms';
+    el.classList.add('up');
+  });
+  return els.length ? (els.length - 1) * step + ARRIVE : 0;   /* + the transition */
+}
+
+/* ── stagger ──────────────────────────────────────────────────────────────
+   Applied only where the order is information: a strip of days, a list of
+   offers, a week of testimony. The claim is never in here — D20 rejected
+   per-word stagger and gave the reason, and the reason still holds: a reveal
+   you have already seen nineteen times is a wait.
+
+   `data-from` is no longer a time. It is the beat this block takes in the
+   composition, compressed into a fifth of a second so the whole screen starts
+   filling at once and finishes in its intended order. */
+function stagger(scene, after) {
+  let end = 0;
+  $$('[data-stagger]', scene).forEach(box => {
+    if (box.hidden || !box.offsetParent) return;
+    const kids = [...box.children];
+    kids.forEach(k => { k.classList.remove('stag'); k.style.animationDelay = ''; });
+    if (RM) return;
+    /* a forty-mark strip and a three-row list get the same total sweep, so a
+       long strip never outlasts the gap it has to fit inside */
+    const step = Math.min((+box.dataset.stagger || 60) * MOT.stag,
+                          SPREAD / Math.max(1, kids.length - 1));
+    /* the blocks start close together — the per-item sweep inside each one is
+       what carries the sequence now, so the beats only need to order them */
+    const beat = ((+box.dataset.from || 300) - 260) * .3;
+    void box.offsetWidth;
+    kids.forEach((k, i) => {
+      k.style.animationDelay = Math.round(after + beat + i * step) + 'ms';
+      k.classList.add('stag');
+    });
+    end = Math.max(end, beat + (kids.length - 1) * step + ARRIVE); /* + the animation */
+  });
+  return end;
+}
+
+/* ════════════════════════ the voice line ════════════════════════
+   PROPOSED — this replaces D20's layered ring and amends it. One line pinned at
+   both ends. A carrier oscillation gives it the shape of a wave; your voice is
+   its amplitude, read out of a rolling ~2.3 s history, so what you said half a
+   second ago is still travelling along it. While it is alive the emphasis rule
+   under the claim stands down, so there is still exactly one accent on screen. */
+const HIST = 168;
+class Line {
+  constructor(cv) {
+    this.cv = cv; this.ctx = cv.getContext('2d');
+    this.hist = new Float32Array(HIST); this.head = 0;
+    this.lvl = 0; this.tgt = 0; this.commit = 0; this.ph = 0;
+    this.mode = cv.dataset.mode || 'line';
+    this.on = false; this.press = false; this.hover = false;
+    this.t = 0; this.burst = 0; this.peak = 0;
+    this.w = 0; this.h = 0; this.dpr = 0;
+    this.C = { accent: TOK('accent'), rule: TOK('rule'), ink: TOK('ink'), bg: TOK('bg') };
+    this.claimRule = cv.closest('.scene')?.querySelector('.claim [data-emph]');
+  }
+  measure() {
+    const r = this.cv.getBoundingClientRect();
+    if (!r.width || !r.height) return false;
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    if (Math.abs(r.width - this.w) < .5 && Math.abs(r.height - this.h) < .5 && dpr === this.dpr)
+      return true;
+    this.w = r.width; this.h = r.height; this.dpr = dpr;
+    this.cv.width = Math.round(r.width * dpr); this.cv.height = Math.round(r.height * dpr);
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return true;
+  }
+  /* speech-like envelope: bursts with pauses, never a decorative sine */
+  envelope(dt) {
+    this.t += dt;
+    if (this.t > this.burst) {
+      this.burst = this.t + .09 + Math.random() * .16;
+      this.peak = Math.random() < .18 ? .05 + Math.random() * .1 : .34 + Math.random() * .62;
+    }
+    return this.peak;
+  }
+  step(dt) {
+    if (this.mode === 'commit') {
+      /* ~5.5 s to fill, ~2.4 s to fall back. Asymmetric on purpose: committing
+         should cost real time, and backing out should not feel like a slap. The
+         accumulator is never reset on release, so two short holds add up. */
+      this.commit = clamp01(this.commit + (this.press ? dt / 5.5 : -dt / 2.4));
+      this.tgt = this.commit;
+    } else {
+      this.tgt = (this.press || this.hover || this.auto) ? this.envelope(dt) : 0;
+    }
+    /* asymmetric attack / release — most of why a meter reads as voice */
+    const rate = this.tgt > this.lvl ? 26 : 8.5;
+    this.lvl += (this.tgt - this.lvl) * Math.min(1, rate * dt);
+    this.head = (this.head + 1) % HIST;
+    this.hist[this.head] = this.lvl;
+    this.ph += dt * 7.5;
+  }
+  draw() {
+    const c = this.ctx, w = this.w, h = this.h;
+    if (!w || !h) return;
+    c.clearRect(0, 0, w, h);
+    if (this.mode === 'commit') {
+      const cx = w / 2, cy = h / 2, rad = Math.min(w, h) * .29;
+      c.beginPath(); c.arc(cx, cy, rad, 0, Math.PI * 2);
+      c.strokeStyle = this.C.rule; c.lineWidth = 1.3; c.stroke();
+      if (this.commit > 0) {
+        c.globalAlpha = .10 * this.commit;
+        c.beginPath(); c.arc(cx, cy, rad, 0, Math.PI * 2);
+        c.fillStyle = this.C.accent; c.fill(); c.globalAlpha = 1;
+        c.beginPath();
+        c.arc(cx, cy, rad, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * this.commit);
+        c.strokeStyle = this.C.accent; c.lineWidth = 2.4; c.lineCap = 'round'; c.stroke();
+        c.lineCap = 'butt';
+      }
+      return;
+    }
+    /* ONE line, and it is the same line at rest and in flight. There used to be
+       a grey hairline underneath waiting to be replaced by an accent wave, and
+       the hairline read as exactly what it looked like: a divider. Now the
+       carrier wave is always drawn — at silence every sample is zero, so it is
+       a dead-straight accent rule that does not move. Speak and the same line
+       starts carrying your voice. Nothing appears, nothing swaps. */
+    const mid = h / 2, n = Math.max(180, (w / 2) | 0), lvl = this.lvl;
+    const wake = Math.min(1, lvl / .06);
+    c.beginPath();
+    for (let i = 0; i < n; i++) {
+      const t = i / (n - 1), x = t * w;
+      const s = this.hist[(this.head - ((t * 132) | 0) + HIST * 3) % HIST];
+      const env = Math.sin(Math.PI * t);             /* pinned at both ends */
+      const carrier = Math.sin(t * Math.PI * 28 - this.ph) * .72
+                    + Math.sin(t * Math.PI * 46 - this.ph * 1.7) * .28;
+      const y = mid + carrier * s * env * (h * .40);
+      i ? c.lineTo(x, y) : c.moveTo(x, y);
+    }
+    c.strokeStyle = this.C.accent; c.lineJoin = 'round';
+    /* full colour at rest, because at 3.87:1 accent only clears the 3:1 mark
+       floor at full strength — so it stays quiet by being THIN, not by being
+       faded */
+    c.lineWidth = 1.6 + 1.0 * wake;
+    c.stroke();
+  }
+}
+const lines = $$('.linec').map(cv => { const L = new Line(cv); cv._line = L; return L; });
+
+/* ════════════════════════ the settle — a spring, not a duration ═══════════
+   Constants live in spikes/flutter-showcase/lib/scenes/settle_scene.dart and
+   that file is the source of truth (D20). What is decided is the shape:
+   underdamped, one small overshoot, then still. */
+const K = 205, CD = 21, M = 1;
+class Spring {
+  constructor(x) { this.x = x; this.v = 0; this.t = x; }
+  retarget(t, v) { this.t = t; if (v !== undefined) this.v = v; }
+  step(dt) {
+    const n = Math.max(1, Math.ceil(dt / .004)), h = dt / n;
+    for (let i = 0; i < n; i++) {
+      const a = (-K * (this.x - this.t) - CD * this.v) / M;
+      this.v += a * h; this.x += this.v * h;
+    }
+    return Math.abs(this.x - this.t) < .4 && Math.abs(this.v) < 6;
+  }
+}
+class Settle {
+  constructor(root) {
+    this.root = root;
+    this.mark = $('[data-mark]', root); this.hint = $('[data-hint]', root);
+    this.tgts = $$('.tgt', root);
+    this.slot = root.closest('.scene')?.querySelector('[data-slot]');
+    this.undo = root.closest('.scene')?.querySelector('[data-undo]');
+    this.undo?.addEventListener('click', () => this.rewind());
+    this.sx = new Spring(0); this.sy = new Spring(0);
+    this.drag = false; this.done = false; this.choice = null; this.commitAt = 0;
+    this.mark.addEventListener('pointerdown', e => this.grab(e));
+    addEventListener('pointermove', e => this.move(e));
+    addEventListener('pointerup', () => this.release());
+    this.tgts.forEach(t => t.addEventListener('click', () => {
+      if (this.done) return;
+      this.choice = t.dataset.tgt; this.aim(); this.commitAt = performance.now() + 620;
+    }));
+  }
+  centre(el) {
+    const a = this.root.getBoundingClientRect(), b = el.getBoundingClientRect();
+    return { x: b.left - a.left + b.width / 2, y: b.top - a.top + b.height / 2 };
+  }
+  /* put the mark back where it was thrown from and unwrite the day */
+  rewind() {
+    clearTimeout(this.goT);
+    this.undo?.classList.remove('on');
+    this.reset();
+  }
+  reset() {
+    clearTimeout(this.goT);
+    this.undo?.classList.remove('on');
+    const r = this.root.getBoundingClientRect();
+    if (!r.width) return;
+    this.home = { x: r.width / 2, y: r.height / 2 };
+    this.sx = new Spring(this.home.x); this.sy = new Spring(this.home.y);
+    this.done = false; this.choice = null; this.commitAt = 0; this.drag = false;
+    this.mark.classList.remove('committed', 'is-broken');
+    this.tgts.forEach(t => t.classList.remove('hot'));
+    if (this.hint) { this.hint.textContent = 'drag it, or throw it'; this.hint.style.opacity = 1; }
+    if (this.slot) this.slot.className = 'm none';
+    this.place();
+  }
+  place() {
+    const m = this.mark.offsetWidth / 2 || 17;
+    this.mark.style.left = (this.sx.x - m) + 'px';
+    this.mark.style.top = (this.sy.x - m) + 'px';
+  }
+  grab(e) {
+    if (this.done) return;
+    e.preventDefault();
+    this.drag = true; this.commitAt = 0;
+    this.lx = e.clientX; this.ly = e.clientY; this.vx = 0; this.vy = 0;
+    this.lt = performance.now();
+    this.mark.setPointerCapture?.(e.pointerId);
+    if (this.hint) this.hint.style.opacity = .35;
+  }
+  move(e) {
+    if (!this.drag) return;
+    const now = performance.now(), dt = Math.max(1, now - this.lt) / 1000;
+    this.vx = (e.clientX - this.lx) / dt; this.vy = (e.clientY - this.ly) / dt;
+    this.lx = e.clientX; this.ly = e.clientY; this.lt = now;
+    this.sx.x += this.vx * dt; this.sy.x += this.vy * dt;
+    const r = this.root.getBoundingClientRect();
+    this.sx.x = Math.max(18, Math.min(r.width - 18, this.sx.x));
+    this.sy.x = Math.max(18, Math.min(r.height - 18, this.sy.x));
+    this.hot(); this.place();
+  }
+  hot() {
+    let best = null, bd = 1e9;
+    for (const t of this.tgts) {
+      const c = this.centre(t), d = Math.hypot(c.x - this.sx.x, c.y - this.sy.x);
+      if (d < bd) { bd = d; best = t; }
+    }
+    const near = bd < 210 ? best : null;
+    this.tgts.forEach(t => t.classList.toggle('hot', t === near));
+    this.near = near;
+    this.mark.classList.toggle('is-broken', near?.dataset.tgt === 'broken');
+  }
+  release() {
+    if (!this.drag) return;
+    this.drag = false; this.hot();
+    this.choice = this.near ? this.near.dataset.tgt : null;
+    /* the fling velocity goes straight into the spring: a hard throw overshoots
+       and a gentle one does not */
+    this.aim(this.vx, this.vy);
+    if (this.choice) {
+      this.commitAt = performance.now() + 620;
+      if (this.hint) this.hint.textContent = "change your mind — it redirects, it doesn't restart";
+    }
+  }
+  aim(vx, vy) {
+    const c = this.choice
+      ? this.centre(this.tgts.find(t => t.dataset.tgt === this.choice)) : this.home;
+    this.sx.retarget(c.x, vx); this.sy.retarget(c.y, vy);
+    this.mark.classList.toggle('is-broken', this.choice === 'broken');
+    this.tgts.forEach(t => t.classList.toggle('hot', t.dataset.tgt === this.choice));
+  }
+  step(dt) {
+    if (this.drag || !this.home) return;
+    const a = this.sx.step(dt), b = this.sy.step(dt);
+    this.place();
+    if (this.commitAt && performance.now() > this.commitAt && a && b && !this.done) {
+      this.done = true;
+      this.mark.classList.add('committed');
+      if (this.slot) this.slot.className = 'm ' + this.choice;
+      if (this.hint) {
+        this.hint.textContent = this.choice === 'kept' ? 'settled — kept' : 'settled — broken';
+        this.hint.style.opacity = 1;
+      }
+      /* A thrown mark is the only gesture in the product that writes to the
+         record, and a throw can miss. So it is not written until the panel
+         actually goes — and for those seconds there is a way back. An undo is
+         not the app commenting on your day; Principle 3 is about what it says,
+         not about whether it lets you correct a slip. */
+      if (this.undo) this.undo.classList.add('on');
+      clearTimeout(this.goT);
+      /* `STEPS[cur].scene` was undefined — the field is `s` — so this never
+         fired and the panel never left after a settle. */
+      this.goT = setTimeout(() => {
+        if (this.undo) this.undo.classList.remove('on');
+        if (STEPS[cur].s === 'gate') leave('gone');
+      }, 3200);
+    }
+  }
+}
+const settles = $$('[data-settle]').map(r => new Settle(r));
+
+/* ════════════════════════ the record strips ════════════════════════
+   One fixture, and every screen reads the same one. `k` kept · `b` broken ·
+   `u` didn't settle · `K` today. Window 1 runs 28 days from 27 June; window 2
+   is twelve days old. Every count printed anywhere on any screen is derived
+   from these two strings, so no screen can contradict another. */
+const W1 = 'kkbkukkuuuukkkbkukkkkbkkkkkk';   /* 19 kept · 3 broken · 6 unsettled */
+const W2 = 'kkkkbkkkkukK';                    /* 10 kept · 1 broken · 1 unsettled */
+const NAME = { k: 'kept', b: 'broken', u: 'unsettled', K: 'kept' };
+const SETS = {
+  w1: { s: W1, from: 1 }, w2: { s: W2, from: 1 }, all: { s: W1 + W2, from: 1 },
+  d7: { s: W1.slice(0, 7), labels: ['Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Mon', 'Tue'] },
+};
+$$('[data-days]').forEach(strip => {
+  const set = SETS[strip.dataset.days]; if (!set) return;
+  strip.innerHTML = [...set.s].map((ch, i) => {
+    const lab = set.labels ? set.labels[i] : (set.from + i);
+    const today = ch === 'K';
+    return `<div class="d${today ? ' today' : ''}"><i class="m ${NAME[ch]}"${
+      today ? ' style="box-shadow:0 0 0 5px #1D2023"' : ''}></i>
+      <span class="dl">${lab}</span></div>`;
+  }).join('');
+});
+/* counts printed on screen, computed rather than typed */
+$$('[data-count]').forEach(el => {
+  const [set, kind] = el.dataset.count.split(':');
+  const s = SETS[set].s;
+  el.textContent = kind === 'days' ? s.length
+    : [...s].filter(c => NAME[c] === kind).length;
+});
+
+/* ════════════════════════ the commit flood ════════════════════════ */
+const floods = [];
+$$('[data-commit]').forEach(btn => {
+  const pane = btn.closest('.pane');
+  const flood = $('[data-flood]', pane), msg = $('[data-floodmsg]', pane);
+  const word = $('[data-floodword]', pane), cap = $('.cap', btn);
+  const inv = $('[data-inv]', pane), src = $('[data-claimsrc]', pane);
+  const letgo = $('[data-letgo]', pane);
+  const copy = $('[data-claimcopy]', pane), slot = $('[data-invslot]', pane);
+  const ring = btn.querySelector('canvas')._line;
+  const emph = pane.querySelector('.claim [data-emph]');
+  let CX = 0, CY = 0, RAD = 0;
+  const place = () => {
+    /* the inverted copy is pixel-identical, so its stand-in for the hold button
+       takes the button's MEASURED height — a guess here is exactly what made
+       the sentence jump once the colour arrived */
+    if (slot) slot.style.height = btn.offsetHeight + 'px';
+    const b = pane.getBoundingClientRect(), c = btn.querySelector('canvas').getBoundingClientRect();
+    if (!b.width) return;
+    CX = c.left - b.left + c.width / 2; CY = c.top - b.top + c.height / 2;
+    RAD = Math.ceil(Math.max(Math.hypot(CX, CY), Math.hypot(b.width - CX, CY),
+      Math.hypot(CX, b.height - CY), Math.hypot(b.width - CX, b.height - CY))) + 8;
+    Object.assign(flood.style, { width: RAD * 2 + 'px', height: RAD * 2 + 'px',
+      left: (CX - RAD) + 'px', top: (CY - RAD) + 'px' });
+  };
+  const clip = p => { if (inv) inv.style.clipPath = inv.style.webkitClipPath =
+    `circle(${(RAD * p).toFixed(1)}px at ${CX.toFixed(1)}px ${CY.toFixed(1)}px)`; };
+  src?.addEventListener('input', () => { if (copy) copy.innerHTML = src.innerHTML; });
+  /* the emphasis rule retracts as the hold begins, so the accent field and the
+     accent mark are never on screen together */
+  btn.addEventListener('pointerdown', () => { place(); emph?.classList.remove('drawn'); });
+
+  const api = {
+    place, done: false,
+    reset() {
+      this.done = false; ring.commit = 0; ring.press = false;
+      flood.classList.remove('done'); flood.style.transform = 'scale(0)';
+      inv?.classList.remove('gone'); place(); clip(0);
+      msg?.classList.remove('in'); cap.textContent = 'Hold to commit';
+      letgo?.classList.remove('on');
+      pane.closest('.scene').classList.remove('committing-now');
+      btn.style.visibility = ''; word.classList.remove('settled');
+      word.style.opacity = '0';
+    },
+    finish() {                      /* → skips the five and a half seconds */
+      ring.commit = 1; this.tick();
+    },
+    tick() {
+      const p = ring.commit;
+      if (!this.done) { flood.style.transform = `scale(${p})`; clip(p);
+        cap.textContent = p > .01 ? 'Committing' : 'Hold to commit';
+        letgo?.classList.toggle('on', p > .04 && p < .999);
+        pane.closest('.scene').classList.toggle('committing-now', p > .02); }
+      if (!this.done && p >= .999) {
+        this.done = true;
+        flood.style.transform = 'scale(1)'; clip(1);
+        btn.style.visibility = 'hidden'; letgo?.classList.remove('on');
+        /* hold the colour and the inverted sentence for a beat, then let the
+           ground come back and the word arrive on it */
+        setTimeout(() => {
+          flood.classList.add('done'); inv?.classList.add('gone'); msg?.classList.add('in');
+          word.style.opacity = ''; bloom(word);
+          const s = $('.scene[data-scene=a3]'); if (s) s.dataset.state = 'done';
+        }, RM ? 0 : 420);
+      }
+    },
+  };
+  floods.push(api);
+});
+
+/* ════════════════════════ going back ════════════════════════
+   Where a step has somewhere to return to, and what that somewhere is called.
+   The labels are concrete because "Back" tells you the direction and not the
+   consequence — and on night one the consequence is the whole question.
+
+   `a3:done` is deliberately absent. D4 fixes 28 days on one sentence; a screen
+   that let you undo that would be the product apologising for its only
+   demand. */
+const BACK = {
+  'a1:speak':    ['a1:rest',    'start again'],
+  'a2':          ['a1:rest',    'say more'],
+  'a3:edit':     ['a2',         'pick a different sentence'],
+  'gate:speak':  ['gate:rest',  'start again'],
+  'gate:settle': ['gate:speak', 'say it again'],
+  'b5':          ['gate:rest',  'actually, tonight'],
+  'f4b':         ['f4a',        'close private'],
+};
+
+/* ════════════════════════ the steps ════════════════════════ */
+const STEPS = [
+  { s: 'a1', st: 'rest', act: 'Act I · Night one', n: 'The yap',
+    h: '<b>Hold the line</b> and talk. Release when you are done.' },
+  { s: 'a1', st: 'speak', act: 'Act I · Night one', n: 'The yap — speaking',
+    h: 'the transcript is verbatim, mess included — the next screen has to point at these words' },
+  { s: 'a2', act: 'Act I · Night one', n: 'Three sentences',
+    h: '<b>Click a candidate.</b> Watch the one accent rule travel instead of teleport.' },
+  { s: 'a3', st: 'edit', act: 'Act I · Night one', n: 'Make it yours',
+    h: 'the sentence is editable · <b>hold the ring 5½ s</b>, or press → to skip to the end' },
+  { s: 'a3', st: 'done', act: 'Act I · Night one', n: 'Committed',
+    h: 'the flood is a proposed amendment to D19 — read <b>Why</b> before you like it' },
+  { s: 'a4', act: 'Act I · Night one', n: 'The other two',
+    h: 'no, A2 does not loop. One claim is committed; two are named and left alone.' },
+
+  { s: 'b1', act: 'Act II · The loop', n: 'The morning beat',
+    h: 'a briefing, not a trial — ~10 seconds, no lock, dismissible by every normal means' },
+  { s: 'gate', st: 'rest', act: 'Act II · The loop', n: 'The evening gate — resting',
+    h: '<b>Hold to speak.</b> This is the only gate in the day, and the only screen with a wall.' },
+  { s: 'gate', st: 'speak', act: 'Act II · The loop', n: 'The evening gate — speaking',
+    h: 'your syllables travel along the line · the claim\'s accent rule stands down while it runs' },
+  { s: 'gate', st: 'settle', act: 'Act II · The loop', n: 'The evening gate — settling',
+    h: '<b>Throw the mark.</b> Hard throws overshoot; gentle ones do not. Real spring, per frame.' },
+  { s: 'gone', act: 'Act II · The loop', n: 'The panel goes',
+    h: 'and the app says nothing. Silence is the default output, not the fallback.' },
+  { s: 'b5', act: 'Act II · The loop', n: 'Not tonight',
+    h: 'one tap · no confirm dialog · no guilt copy · the day logs as unsettled' },
+  { s: 'b6', act: 'Act II · The loop', n: 'The morning after',
+    h: 'a repair, not a beat — the same question in a costume would be a nag' },
+
+  { s: 'c1', st: 'kept', act: 'Act III · Pressure',
+    n: 'The first miss — after a kept day',
+    h: 'press → and watch the whole screen. Only one 12&nbsp;px mark changes.' },
+  { s: 'c1', st: 'broken', act: 'Act III · Pressure',
+    n: 'The first miss — after a broken day',
+    h: 'that was the entire difference. D12 asks for absence, and absence has to be designed.' },
+  { s: 'c2', act: 'Act III · Pressure', n: 'The push — vague testimony',
+    h: 'it makes no judgement about the training, only about what the testimony has become' },
+  { s: 'c3', act: 'Act III · Pressure', n: 'Second in a row',
+    h: '“Nothing, I just didn\'t” is a complete answer to this. That is a rule, not a courtesy.' },
+  { s: 'c4', act: 'Act III · Pressure', n: 'Third — the claim goes on trial',
+    h: 'the thing in the dock is a sentence. A claim can be wrong without anybody having failed.' },
+  { s: 'c5', act: 'Act III · Pressure', n: 'Stopping — the receipt',
+    h: 'the only place in the product where the app argues for staying — and no verb is aimed at you' },
+
+  { s: 'd1', act: 'Act IV · The reviews', n: 'Day 7 — sharpening',
+    h: 'you chose to read this, so it is allowed to be long. Scroll it.' },
+  { s: 'd2', act: 'Act IV · The reviews', n: 'Day 28 — the window',
+    h: 'counts, never a score. Three numbers side by side, no percentage, no grade.' },
+
+  { s: 'e1', act: 'Act V · The record', n: 'The record — native',
+    h: 'window 1 carries a four-day run of unsettled, in full. That run is the app dying.' },
+  { s: 'e2', act: 'Act V · The record', n: 'The web dashboard',
+    h: 'look for a control that settles a day. There is none, and no endpoint behind one either.' },
+
+  { s: 'f1', act: 'Act VI · The rest', n: 'The Counsel',
+    h: 'any chatbot can debate two options; only this can say “defended it on 11 of 19”' },
+  { s: 'f2', act: 'Act VI · The rest', n: 'Settings — and strict mode',
+    h: 'printing what strict mode cannot do is the only version that survives a user trying it' },
+  { s: 'f4a', act: 'Act VI · The rest', n: 'Private claims — closed',
+    h: 'names no sentence, shows no count. A count is information too.' },
+  { s: 'f4b', act: 'Act VI · The rest', n: 'Private claims — open',
+    h: 'nothing about this is in the record yet — it is a proposal with a real fork in it' },
+];
+const scenes = {};
+$$('.scene').forEach(s => scenes[s.dataset.scene] = s);
+let cur = -1;
+
+function applyWhen(scene, animate) {
+  const st = scene.dataset.state;
+  $$('[data-when]', scene).forEach(el => {
+    const want = st ? el.dataset.when.split(/\s+/).includes(st) : true;
+    const was = !el.hidden;
+    el.hidden = !want;
+    /* only what actually appears is animated. Fading out the block you are
+       replacing as well would leave the screen empty in the middle. */
+    if (want && !was && animate && !RM) {
+      el.classList.remove('swapin'); void el.offsetWidth; el.classList.add('swapin');
+    } else if (!animate) el.classList.remove('swapin');
+  });
+}
+function stopType(scene) {
+  $$('[data-type]', scene).forEach(el => {
+    clearInterval(el._tm);
+    if (el._full === undefined) el._full = el.textContent.trim();
+    el.textContent = '';
+  });
+}
+function runType(scene) {
+  $$('[data-type]', scene).forEach(el => {
+    if (el.hidden || !el.offsetParent) return;
+    clearInterval(el._tm);
+    const full = el._full;
+    if (RM) { el.textContent = full; return; }
+    let i = 0;
+    /* on a timer, not rAF: a throttled tab starves rAF, and a transcript that
+       never arrives reads as a broken screen rather than a paused one */
+    el._tm = setInterval(() => {
+      i += 3; el.textContent = full.slice(0, i);
+      if (i >= full.length) { clearInterval(el._tm); el.textContent = full; }
+    }, 42);
+  });
+}
+
+function show(i, opts = {}) {
+  const step = STEPS[i], scene = scenes[step.s], prevStep = STEPS[cur];
+  const sameScene = prevStep && prevStep.s === step.s;
+  const back = cur >= 0 && i < cur;
+  if (cur >= 0 && !sameScene) {
+    const p = scenes[prevStep.s];
+    p.classList.remove('on', 'arriving');
+    stopType(p);
+    $$('.linec', p).forEach(c => { c._line.press = false; c._line.auto = false; });
+    /* a bloom interrupted by a scene change leaves its animation behind, and
+       the sentence comes back as a permanent smudge next time you visit */
+    $$('[data-bloom]', p).forEach(endBloom);
+    $$('.back', p).forEach(b => b.remove());   /* the way back belongs to the step */
+    p.classList.remove('committing-now');
+    clearTimeout(p._lv);
+    if (RM || opts.noExit) { p.style.animation = ''; p.classList.remove('leaving'); }
+    else {
+      p.style.setProperty('--dy', (back ? 9 : -9) + 'px');
+      p.classList.remove('leaving'); void p.offsetWidth; p.classList.add('leaving');
+      p._lv = setTimeout(() => p.classList.remove('leaving'), 230);
+    }
+  }
+  cur = i;
+  const stateChanged = sameScene && step.st && scene.dataset.state !== step.st;
+  if (step.st) scene.dataset.state = step.st;
+  applyWhen(scene, stateChanged);
+  /* Going A → B → A faster than the exit finishes leaves A carrying `leaving`
+     while it is also the current screen, and the exit animation wins. Clear it
+     before arming the entrance. */
+  clearTimeout(scene._lv);
+  scene.classList.remove('leaving');
+  scene.classList.add('on');
+  if (!sameScene && !RM && !opts.noEnter) {
+    scene.style.setProperty('--dy', (back ? -11 : 11) + 'px');
+    scene.classList.remove('arriving'); void scene.offsetWidth; scene.classList.add('arriving');
+    clearTimeout(scene._ar);
+    scene._ar = setTimeout(() => scene.classList.remove('arriving'), 460);
+  }
+  document.body.dataset.at = step.s;
+
+  /* the way back, if this step has one */
+  const pane = $('.pane', scene);
+  $$('.back', scene).forEach(b => b.remove());
+  const wayBack = BACK[step.st ? step.s + ':' + step.st : step.s];
+  if (wayBack && pane) {
+    const b = document.createElement('button');
+    b.className = 'back rise';
+    b.innerHTML = '<span class="g" aria-hidden="true">&#8592;</span> ' + wayBack[1];
+    b.addEventListener('click', () => {
+      const [t, st2] = wayBack[0].split(':');
+      jumpTo(t, st2);
+    });
+    pane.prepend(b);
+    scene.setAttribute('data-hasback', '');
+  } else scene.removeAttribute('data-hasback');
+
+  /* Canvases inside a hidden scene measure zero, so they are sized on arrival —
+     on a timer rather than rAF. A throttled or backgrounded tab starves rAF
+     entirely, and an unmeasured canvas is a blank rectangle where the voice
+     should be. setTimeout degrades to slow; it does not degrade to empty.
+     Translate does not change a box's width or height, and the flood and the
+     settle both work from differences between rects inside the same moving
+     subtree — so none of this has to wait for the transition to finish. */
+  setTimeout(() => {
+    $$('.linec', scene).forEach(c => { c._line.measure(); c._line.draw(); });
+    floods.forEach(f => f.place());
+    if (step.s === 'gate' && step.st === 'settle') settles.forEach(s => {
+      if (scene.contains(s.root)) s.reset();
+    });
+  }, 0);
+
+  /* per-scene arming */
+  if (step.s === 'a1' || step.s === 'gate') {
+    const L = $('.linec', scene)._line;
+    const speaking = step.st === 'speak';
+    L.auto = speaking;
+    const cap = $('.hold .cap', scene);
+    if (cap) cap.textContent = speaking ? "Release when you're done" : 'Hold to speak';
+    /* one accent on the screen at a time: while the line is alive the rule
+       under the claim stands down, and it does not wait for a level threshold
+       to notice — the state change is enough */
+    const rule = scene.querySelector('.claim [data-emph]');
+    if (speaking && rule) {
+      rule.classList.remove('drawn');
+      /* and cancel the pending draw, or the entrance's timer puts it back
+         half a second into the sentence you are speaking */
+      $$('[data-bloom]', scene).forEach(el => clearTimeout(el._rt));
+    }
+    if (speaking) runType(scene); else stopType(scene);
+    if (step.s === 'a1') { speaking ? startTimer(scene) : resetTimer(scene); }
+    if (step.s === 'gate' && step.st !== 'settle')
+      settles.forEach(x => { if (scene.contains(x.root)) x.done = false; });
+  }
+  if (step.s === 'a3') {
+    const f = floods[0];
+    if (step.st === 'edit' && (!sameScene || opts.replay)) f.reset();
+    if (step.st === 'done' && !f.done) { f.reset(); setTimeout(() => f.finish(), 16); }
+  }
+  if (step.s === 'c1') {
+    const y = $('[data-yesterday]', scene);
+    if (y) y.className = 'm ' + (step.st === 'broken' ? 'broken' : 'kept');
+  }
+
+  /* On a page change the surface is held at opacity 0 for 90ms while the old
+     one leaves. Starting the bloom before that spends a twelfth of it on an
+     invisible screen. */
+  if (!sameScene || opts.replay || opts.entrance)
+    entrance(scene, (!sameScene && !RM && !opts.noEnter && !opts.replay) ? 90 : 0);
+  paintBar();
+  paintNotes();
+  markIndex();
+}
+function entrance(scene, startDelay = 0) {
+  /* `swapin` is fill:both, so once a state change has run it holds the element
+     at opacity 1 forever — and an animation beats a transition, which meant a
+     block that had ever swapped could never wait for the bloom again on a
+     later visit. It is a one-shot; it has to be cleared before the next one. */
+  $$('.swapin', scene).forEach(el => el.classList.remove('swapin'));
+  const bs = $$('[data-bloom]', scene).filter(el => !el.hidden && el.offsetParent !== null);
+  /* everything that is not the sentence waits for the sentence. A screen with
+     no sentence on it has nothing to wait for. */
+  const after = (bs.length && !RM) ? startDelay + B.dur + SETTLE_BEAT : startDelay + 110;
+  bs.forEach(el => bloom(el, false, startDelay, false));
+  const composed = after + Math.max(rises(scene, after), stagger(scene, after));
+  /* the rule is the app's last gesture: no earlier than D20's 0.9s after the
+     sentence settles, and never while the screen is still arriving */
+  const ruleAt = Math.max(startDelay + B.dur + RULE_GAP, composed + RULE_AFTER_COMPOSE);
+  bs.forEach(el => {
+    const rule = el.querySelector('[data-emph]');
+    if (!rule) return;
+    clearTimeout(el._rt);
+    if (RM) { rule.classList.add('drawn'); return; }
+    el._rt = setTimeout(() => rule.classList.add('drawn'), ruleAt);
+  });
+  if (!bs.length) $$('[data-emph]', scene).forEach(e => e.classList.add('drawn'));
+}
+function leave(sceneName) {                 /* fade the panel out, then move on */
+  const idx = STEPS.findIndex(s => s.s === sceneName);
+  if (idx < 0) return;
+  const p = scenes[STEPS[cur].s];
+  if (RM) { show(idx); return; }
+  p.style.transition = 'opacity .7s cubic-bezier(.16,1,.3,1)';
+  p.style.opacity = '0';
+  setTimeout(() => { p.style.transition = ''; p.style.opacity = '';
+    show(idx, { noExit: true }); }, 720);
+}
+const go = d => { const n = cur + d; if (n >= 0 && n < STEPS.length) show(n); };
+function jumpTo(sceneName, state) {
+  const i = STEPS.findIndex(s => s.s === sceneName && (!state || s.st === state));
+  if (i >= 0) show(i);
+}
+
+/* the real controls advance the demo, which is the point of a click-through */
+$$('[data-advance]').forEach(b => b.addEventListener('click', () => {
+  const [s, st] = b.dataset.advance.split(':');
+  jumpTo(s, st);
+}));
+
+/* ════════════════════════ holding to speak ════════════════════════ */
+$$('[data-hold]').forEach(btn => {
+  const L = btn.querySelector('canvas')._line;
+  let t0 = 0;
+  const down = e => {
+    e.preventDefault(); L.press = true; t0 = performance.now();
+    const step = STEPS[cur];
+    if (step.s === 'a1' && step.st === 'rest') jumpTo('a1', 'speak');
+    if (step.s === 'gate' && step.st === 'rest') jumpTo('gate', 'speak');
+  };
+  const up = () => {
+    if (!L.press) return;
+    L.press = false;
+    const held = performance.now() - t0;
+    const adv = btn.dataset.advance;
+    if (adv && held > 700) {
+      const [s, st] = adv.split(':');
+      setTimeout(() => jumpTo(s, st), 320);
+    }
+  };
+  btn.addEventListener('pointerdown', down);
+  addEventListener('pointerup', up);
+  btn.addEventListener('pointerenter', () => L.hover = true);
+  btn.addEventListener('pointerleave', () => L.hover = false);
+});
+$$('[data-commit]').forEach(btn => {
+  const L = btn.querySelector('canvas')._line;
+  btn.addEventListener('pointerdown', e => { e.preventDefault(); L.press = true; });
+  addEventListener('pointerup', () => L.press = false);
+});
+
+/* the running clock on the yap */
+function startTimer(scene) {
+  const el = $('[data-timer]', scene); if (!el) return;
+  clearInterval(el._tm); el._s = el._s || 0;
+  el._tm = setInterval(() => { el._s++;
+    el.textContent = Math.floor(el._s / 60) + ':' + String(el._s % 60).padStart(2, '0'); }, 1000);
+}
+function resetTimer(scene) {
+  const el = $('[data-timer]', scene); if (!el) return;
+  clearInterval(el._tm); el._s = 0; el.textContent = '0:00';
+}
+
+/* ════════════════════════ picking a candidate ════════════════════════
+   One rule exists. Picking moves it: it retracts right-to-left off the old
+   sentence and draws left-to-right under the new one, so the scarcity rule is
+   something you watch rather than something you are told. */
+$$('[data-cands]').forEach(group => {
+  const rows = $$('[data-cand]', group);
+  rows.forEach(row => row.addEventListener('click', () => {
+    if (row.classList.contains('on')) return;
+    rows.forEach(r => {
+      r.classList.toggle('on', r === row);
+      r.querySelector('.emph')?.classList.toggle('drawn', r === row);
+    });
+  }));
+});
+
+/* ════════════════════════ one clock ════════════════════════ */
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  const scene = scenes[STEPS[cur]?.s];
+  if (scene) {
+    $$('.linec', scene).forEach(c => { const L = c._line;
+      if (L.measure()) { L.step(dt); L.draw(); } });
+    settles.forEach(s => { if (scene.contains(s.root) && !s.root.hidden) s.step(dt); });
+  }
+  floods.forEach(f => f.tick());
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ════════════════════════ the bar ════════════════════════ */
+const bar = { name: $('#sname'), hint: $('#hint'), count: $('#count'),
+  prog: $('#prog'), prev: $('#prev'), next: $('#next') };
+
+/* The act rail is the whole of the navigation fix. Twenty-seven screens with
+   only next/back means twenty clicks to reach the record; six labels means
+   one, and you can see where you are without opening anything. */
+const ACTS = [];
+STEPS.forEach((s, i) => {
+  const short = s.act.replace(/^Act [IVX]+ · /, '');
+  let a = ACTS.find(x => x.act === s.act);
+  if (!a) { a = { act: s.act, short, first: i, items: [] }; ACTS.push(a); }
+  a.items.push(i);
+});
+$('#acts-rail').innerHTML = ACTS.map((a, i) =>
+  `<button class="act" data-first="${a.first}">${a.short}</button>`).join('');
+$$('.act').forEach(b => b.addEventListener('click', () => show(+b.dataset.first)));
+
+function paintBar() {
+  const s = STEPS[cur];
+  const group = STEPS.filter(x => x.s === s.s);
+  const dots = group.length > 1
+    ? `<span class="dots">${group.map(x => `<i class="${x === s ? 'on' : ''}"></i>`).join('')}</span>`
+    : '';
+  bar.name.innerHTML = s.n + dots;
+  bar.hint.innerHTML = s.h || '';
+  bar.hint.title = (s.h || '').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ');
+  bar.count.textContent = (cur + 1) + ' / ' + STEPS.length;
+  bar.prog.style.width = ((cur + 1) / STEPS.length * 100) + '%';
+  bar.prev.disabled = cur === 0; bar.next.disabled = cur === STEPS.length - 1;
+  $$('.act').forEach(b => {
+    const a = ACTS.find(x => x.first === +b.dataset.first);
+    b.classList.toggle('on', a.items.includes(cur));
+  });
+}
+bar.prev.onclick = () => go(-1);
+bar.next.onclick = () => go(1);
+$('#t-hide').onclick = () => document.body.classList.toggle('nobar');

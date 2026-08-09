@@ -1,0 +1,154 @@
+<!-- ═════════════════════ B1 · the morning beat ═════════════════════ -->
+<section class="scene" data-scene="b1" data-surface="float" style="--fw:640px;--fh:470px">
+  <div class="frame">
+    <div class="tbar"><i></i><i></i><i></i><span>Force</span></div>
+    <div class="pane" style="padding:clamp(18px,3.4vh,36px) clamp(26px,2.6vw,38px)">
+      <div class="col" style="--cw:none">
+        <div class="rise" style="display:flex;justify-content:space-between;align-items:baseline">
+          <span class="eyebrow">Tuesday · day 19</span>
+          <span class="quiet num">9 left</span>
+        </div>
+        <p class="claim xs" data-bloom style="margin-top:20px">I am someone who trains
+          <span class="emph" data-emph>when I don't feel like it</span>.</p>
+        <hr class="r" style="margin-top:22px">
+        <div class="rise" style="margin-top:22px">
+          <span class="eyebrow">Today that means</span>
+          <p class="body" style="margin-top:8px;color:var(--ink)">gym after the 4pm shift</p>
+        </div>
+        <div class="grow"></div>
+        <div data-stagger="175" data-from="400">
+          <span class="eyebrow">Also standing</span>
+          <p class="supp" style="margin-top:7px">I am someone who sends the application before I
+            feel ready.</p>
+          <p class="supp">I am someone who calls back the same week.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════════════ the evening gate — one screen, three states ═══════ -->
+<section class="scene" data-scene="gate" data-state="rest" data-surface="panel">
+  <div class="frame">
+    <div class="pane">
+      <div class="col" style="--cw:920px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <span class="eyebrow rise">Tuesday · day 19</span>
+          <span class="quiet num rise" data-clock>11:48pm</span>
+        </div>
+
+        <div class="rise" data-when="rest settle" style="margin-top:clamp(26px,3.6vh,40px)">
+          <p class="quiet">this morning you said</p>
+          <p class="said" style="margin-top:5px;color:var(--ink2)">gym after the 4pm shift</p>
+        </div>
+
+        <p class="claim" data-claim data-bloom data-when="rest speak"
+           style="margin-top:clamp(28px,4vh,44px);max-width:19ch">I am someone who trains
+          <span class="emph" data-emph>when I don't feel like it</span>.</p>
+
+        <p class="quiet rise" data-when="rest" style="margin-top:clamp(22px,3vh,32px)">Tempo:
+          push session, 52 min, ended 6:41pm</p>
+
+        <div data-when="settle" style="margin-top:clamp(22px,3vh,32px)">
+          <span class="eyebrow rise">You said</span>
+          <p class="said" data-bloom style="margin-top:10px;max-width:46ch;color:var(--ink)">legs
+            were dead honestly. went anyway, didn't want to. did the session, cut the last set.</p>
+        </div>
+
+        <div class="grow"></div>
+
+        <div data-when="rest speak" style="display:flex;flex-direction:column;align-items:center;
+             gap:clamp(14px,2.2vh,26px);padding:clamp(10px,1.6vh,20px) 0 clamp(14px,2.2vh,28px)">
+          <button class="hold rise" data-hold data-advance="gate:settle">
+            <canvas class="linec" data-mode="line"
+              style="width:clamp(460px,52vw,820px);height:clamp(82px,15vh,120px)"></canvas>
+            <span class="cap">Hold to speak</span>
+          </button>
+          <div data-when="speak" style="width:100%;max-width:50ch;min-height:clamp(72px,11vh,96px)">
+            <hr class="r" style="margin-bottom:14px">
+            <p class="said" data-type>legs were dead honestly. went anyway, didn't want to. did
+              the session, cut the last set.</p>
+          </div>
+        </div>
+
+        <div class="settle rise" data-settle data-when="settle"
+             style="margin-top:auto;margin-bottom:clamp(26px,4vh,48px)">
+          <div class="tgt" data-tgt="kept"><span class="tw">Kept</span></div>
+          <div class="tgt" data-tgt="broken"><span class="tw">Broken</span></div>
+          <div class="mark" data-mark></div>
+          <p class="hint"><span data-hint>drag it, or throw it</span><button class="undo" data-undo>undo</button></p>
+        </div>
+
+        <hr class="r" data-when="rest settle">
+        <div data-when="rest settle" style="margin-top:clamp(18px,2.4vh,26px);
+             display:flex;align-items:flex-end;justify-content:space-between">
+          <div class="strip" data-stagger="51" data-from="430" style="--sy:0px">
+            <div class="d"><i class="m kept"></i><span class="dl">W</span></div>
+            <div class="d"><i class="m kept"></i><span class="dl">T</span></div>
+            <div class="d"><i class="m broken"></i><span class="dl">F</span></div>
+            <div class="d"><i class="m kept"></i><span class="dl">S</span></div>
+            <div class="d"><i class="m unsettled"></i><span class="dl">S</span></div>
+            <div class="d"><i class="m kept"></i><span class="dl">M</span></div>
+            <div class="d today"><i class="m none" data-slot></i><span class="dl">T</span></div>
+          </div>
+          <button class="btn plain rise" data-advance="b5">Not tonight</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════════════ the panel goes, and nothing is said ═════════════ -->
+<section class="scene" data-scene="gone" data-surface="none">
+  <div class="frame"></div>
+</section>
+
+<!-- ═════════════════════ B5 · Not tonight ═════════════════════ -->
+<section class="scene" data-scene="b5" data-surface="panel">
+  <div class="frame">
+    <div class="pane" style="opacity:.32;filter:blur(1.3px)">
+      <div class="col" style="--cw:920px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <span class="eyebrow">Tuesday · day 19</span>
+          <span class="quiet num">11:48pm</span>
+        </div>
+        <p class="claim" style="margin-top:clamp(40px,7vh,80px);max-width:19ch">I am someone who
+          trains <span class="emph drawn">when I don't feel like it</span>.</p>
+        <div class="grow"></div>
+        <div class="strip">
+          <div class="d"><i class="m kept"></i><span class="dl">W</span></div>
+          <div class="d"><i class="m kept"></i><span class="dl">T</span></div>
+          <div class="d"><i class="m broken"></i><span class="dl">F</span></div>
+          <div class="d"><i class="m kept"></i><span class="dl">S</span></div>
+          <div class="d"><i class="m unsettled"></i><span class="dl">S</span></div>
+          <div class="d"><i class="m kept"></i><span class="dl">M</span></div>
+          <div class="d today"><i class="m unsettled"></i><span class="dl">T</span></div>
+        </div>
+      </div>
+    </div>
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+      <button class="btn plain" data-advance="gone"
+        style="font-size:clamp(20px,1.7vw,24px);color:var(--ink2)">Not tonight</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════════════ B6 · the morning after ═════════════════════ -->
+<section class="scene" data-scene="b6" data-surface="float" style="--fw:600px;--fh:400px">
+  <div class="frame">
+    <div class="tbar"><i></i><i></i><i></i><span>Force</span></div>
+    <div class="pane" style="padding:clamp(18px,3.4vh,36px) clamp(26px,2.6vw,38px)">
+      <div class="col" style="--cw:none">
+        <span class="eyebrow rise">Wednesday · day 20</span>
+        <h1 class="title" data-bloom style="margin-top:16px;max-width:20ch">Yesterday didn't
+          settle. Bad day, or busy day?</h1>
+        <div class="grow"></div>
+        <div class="rise" style="display:flex;gap:14px">
+          <button class="btn" data-advance="c1">Bad day</button>
+          <button class="btn" data-advance="c1">Busy day</button>
+        </div>
+        <p class="quiet rise" style="margin-top:16px">two taps and it's closed</p>
+      </div>
+    </div>
+  </div>
+</section>

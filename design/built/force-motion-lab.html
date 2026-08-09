@@ -1,0 +1,519 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{margin:0;padding:0}img,canvas{display:block;max-width:100%}</style></head><body>
+<title>Force — Motion & Palette Lab</title>
+<style>
+  /* ============ page chrome — deliberately neutral so the palettes read true ============ */
+  :root{
+    --page:#2A2D30; --pane:#212427; --edge:#3A3E42;
+    --txt:#E4E7EA; --txt2:#A2A9AF; --txt3:#767D83;
+    --hl:#D8A15E;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --disp:ui-serif,Georgia,"Times New Roman",serif;
+  }
+  /* ---- palette A · ASH — v1's monochrome, with state colours that actually pass ---- */
+  [data-pal="ash"]{
+    --bg:#101112; --bg2:#191B1D; --ink:#EDEAE4; --ink2:#A8AEB3; --ink3:#7E858B;
+    --kept:#EDEAE4; --broken:#8A7566; --unset:#5A6066; --accent:#B4553A; --rule:#2B2F33;
+  }
+  /* ---- palette B · SLATE & BRASS — cool ground, warm metal ---- */
+  [data-pal="brass"]{
+    --bg:#0D1418; --bg2:#151F25; --ink:#E7ECEF; --ink2:#9FB0BA; --ink3:#75858F;
+    --kept:#D8B265; --broken:#5E7280; --unset:#39454D; --accent:#D8B265; --rule:#243139;
+  }
+  /* ---- palette C · PLATE — warm dark, bone ink. built for the engravings ---- */
+  [data-pal="plate"]{
+    --bg:#15120F; --bg2:#1F1A15; --ink:#EAE1CF; --ink2:#B0A48E; --ink3:#867B69;
+    --kept:#EAE1CF; --broken:#8A6A4A; --unset:#574C3E; --accent:#B4623A; --rule:#2E271F;
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--txt);font-family:var(--sans);
+    font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1240px;margin:0 auto;padding:0 22px 90px}
+
+  header{padding:52px 0 26px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--hl);margin:0 0 16px}
+  h1{font-family:var(--mono);font-size:clamp(26px,4.4vw,38px);font-weight:600;letter-spacing:-.02em;
+    margin:0 0 16px;line-height:1.1}
+  .lede{color:var(--txt2);max-width:64ch;margin:0;font-size:17px}
+  .lede b{color:var(--txt)}
+
+  /* ---- palette bar ---- */
+  .palbar{position:sticky;top:0;z-index:20;background:var(--page);
+    border-bottom:1px solid var(--edge);padding:14px 0;margin-top:26px;
+    display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .palbar .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--txt3);margin-right:4px}
+  .pal{border:1px solid var(--edge);background:var(--pane);color:var(--txt2);cursor:pointer;
+    border-radius:7px;padding:8px 13px;font-family:var(--mono);font-size:12px;letter-spacing:.04em;
+    display:flex;align-items:center;gap:9px;transition:border-color .15s,color .15s}
+  .pal:hover{color:var(--txt);border-color:var(--txt3)}
+  .pal[aria-pressed="true"]{border-color:var(--hl);color:var(--txt)}
+  .pal .sw{display:flex;gap:3px}
+  .pal .sw i{width:11px;height:11px;border-radius:3px;display:block;border:1px solid rgba(255,255,255,.14)}
+  .pal:focus-visible{outline:2px solid var(--hl);outline-offset:2px}
+
+  /* ---- section ---- */
+  section{padding:46px 0;border-bottom:1px solid var(--edge)}
+  .shead{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap}
+  .snum{font-family:var(--mono);font-size:12px;color:var(--hl);letter-spacing:.1em}
+  h2{font-family:var(--mono);font-size:22px;font-weight:600;margin:0;letter-spacing:-.01em}
+  .ssub{color:var(--txt2);max-width:66ch;margin:10px 0 0;font-size:15.5px}
+
+  .lab{display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:22px;margin-top:30px}
+  .opt{min-width:0}
+  .ohead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:11px}
+  .oname{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt)}
+  .play{border:1px solid var(--edge);background:transparent;color:var(--txt2);cursor:pointer;
+    border-radius:6px;padding:5px 11px;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
+    text-transform:uppercase}
+  .play:hover{color:var(--txt);border-color:var(--txt3)}
+  .play:focus-visible{outline:2px solid var(--hl);outline-offset:2px}
+  .odesc{color:var(--txt3);font-size:14px;margin:11px 0 0;line-height:1.5}
+
+  /* ---- phone frame ---- */
+  .ph{border:1px solid var(--edge);border-radius:24px;padding:7px;background:var(--pane)}
+  .sc{background:var(--bg);border-radius:18px;height:396px;position:relative;overflow:hidden;
+    padding:20px 18px;display:flex;flex-direction:column;transition:background .45s ease}
+
+  /* ---- shared wireframe bits (now at real, legible sizes) ---- */
+  .cap{font-family:var(--mono);font-size:14px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink3);transition:color .45s ease}
+  .claim{font-family:var(--disp);font-size:25px;line-height:1.2;color:var(--ink);margin:0;
+    letter-spacing:-.01em;transition:color .45s ease}
+  .said{font-size:16px;color:var(--ink2);line-height:1.45;transition:color .45s ease}
+  .grow{flex:1;min-height:8px}
+  .marks{display:flex;gap:9px;align-items:center}
+  .mk{width:12px;height:12px;border-radius:99px;flex:none;transition:background .45s,border-color .45s}
+  .mk.k{background:var(--kept)} .mk.b{background:var(--broken)}
+  .mk.u{border:2px solid var(--unset)}
+
+  /* ============ 1 · claim arrival ============ */
+  .word{display:inline-block;white-space:pre}
+  .a-word .word{opacity:0;transform:translateY(15px);filter:blur(7px)}
+  .a-word.go .word{animation:wordIn .62s cubic-bezier(.16,.9,.28,1) both}
+  @keyframes wordIn{to{opacity:1;transform:none;filter:blur(0)}}
+
+  .a-line .ln{display:block;overflow:hidden}
+  .a-line .ln > span{display:block;transform:translateY(102%)}
+  .a-line.go .ln > span{animation:lineUp .78s cubic-bezier(.2,.85,.25,1) both}
+  @keyframes lineUp{to{transform:none}}
+
+  .a-bloom{opacity:0;filter:blur(13px);transform:scale(1.035)}
+  .a-bloom.go{animation:bloom 1.15s cubic-bezier(.25,.6,.2,1) both}
+  @keyframes bloom{to{opacity:1;filter:blur(0);transform:none}}
+
+  .attrib{opacity:0}
+  .go ~ .attrib, .attrib.go{animation:fadeUp .7s .55s cubic-bezier(.2,.8,.3,1) both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+
+  /* ============ 2 · hold to speak ============ */
+  .stage{flex:1;display:flex;align-items:center;justify-content:center;position:relative}
+  canvas{display:block}
+  .tmr{position:absolute;font-family:var(--disp);font-size:29px;color:var(--ink);
+    transition:color .45s ease}
+
+  /* ============ 3 · settle ============ */
+  .settle-strip{display:flex;gap:9px;align-items:center;position:relative}
+  .flyer{position:absolute;width:12px;height:12px;border-radius:99px;background:var(--kept);
+    left:0;top:0;opacity:0}
+  .verdict{border:1px solid var(--rule);border-radius:99px;padding:11px 0;text-align:center;
+    font-family:var(--mono);font-size:14px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--ink);transition:border-color .45s,color .45s}
+
+  .note{margin-top:26px;border-left:2px solid var(--hl);padding:3px 0 3px 15px;color:var(--txt2);
+    font-size:15px;max-width:70ch}
+  .note b{color:var(--txt);display:block;font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+    text-transform:uppercase;margin-bottom:5px}
+  .ask{margin-top:40px;border:1px solid var(--hl);border-radius:10px;padding:24px;background:rgba(216,161,94,.07)}
+  .ask h3{font-family:var(--mono);font-size:15px;margin:0 0 12px}
+  .ask ol{margin:0;padding-left:20px;color:var(--txt2)} .ask li{margin-bottom:8px} .ask b{color:var(--txt)}
+</style>
+
+<div class="wrap">
+<header>
+  <p class="eyebrow">Force · motion &amp; palette lab · 4 Aug 2026</p>
+  <h1>Ash · Ink Bloom · Italic + rule · Fling</h1>
+  <p class="lede">All four locked — still switchable here so you can check the choices held. <b>The ring is rebuilt</b>: no gradient, each layer now a solid body of its own colour drawn back to front, so depth comes from overlap and occlusion rather than a fade. Press <b>Replay</b> on anything.</p>
+</header>
+
+<div class="palbar" role="group" aria-label="Palette">
+  <span class="lbl">Palette</span>
+  <button class="pal" data-set="ash" aria-pressed="true">
+    <span class="sw"><i style="background:#101112"></i><i style="background:#EDEAE4"></i><i style="background:#8A7566"></i><i style="background:#B4553A"></i></span> Ash</button>
+  <button class="pal" data-set="brass" aria-pressed="false">
+    <span class="sw"><i style="background:#0D1418"></i><i style="background:#E7ECEF"></i><i style="background:#D8B265"></i><i style="background:#5E7280"></i></span> Slate &amp; Brass</button>
+  <button class="pal" data-set="plate" aria-pressed="false">
+    <span class="sw"><i style="background:#15120F"></i><i style="background:#EAE1CF"></i><i style="background:#8A6A4A"></i><i style="background:#B4623A"></i></span> Plate</button>
+</div>
+
+<!-- ================= 1 ================= -->
+<section>
+  <div class="shead"><span class="snum">01</span><h2>The claim arrives</h2></div>
+  <p class="ssub">The first thing you see, every single morning, for 28 days. It has to land the first time and survive the twenty-eighth.</p>
+
+  <div class="lab" id="lab1"></div>
+
+  <p class="note"><b>What I'd watch for</b>Word-by-word is the most affecting on day one and the most likely to feel slow by day twenty. Line-rise is the quickest to read. Ink-bloom is the only one that never asks you to wait for a sequence — which may be the right answer for something you see 28 times.</p>
+</section>
+
+<!-- ================= 1b ================= -->
+<section>
+  <div class="shead"><span class="snum">01b</span><h2>Emphasis — where the one colour goes</h2></div>
+  <p class="ssub">All three use <b>Ink&nbsp;Bloom</b>, so you're comparing the emphasis, not the entrance. The mark lands <i>after</i> the sentence has resolved — the claim reads first, then the app points at the part that can actually be broken.</p>
+
+  <div class="lab" id="lab1b"></div>
+
+  <p class="note"><b>Why this phrase</b>“I am someone who trains” is unfalsifiable — any day can absorb it. <b>“when I don't feel like it”</b> is the half that can be false, and therefore the only half that can be kept. Marking it puts the one spot of colour in the app on the exact words the whole product is about.</p>
+</section>
+
+<!-- ================= 2 ================= -->
+<section>
+  <div class="shead"><span class="snum">02</span><h2>Hold to speak</h2></div>
+  <p class="ssub">You asked for a big circle that comes up when you hold. Here's that, plus two other ways to show a voice. Amplitude here is synthesised — on device it's your real microphone.</p>
+
+  <div class="lab" id="lab2"></div>
+
+  <p class="note"><b>What I'd watch for</b>The ring is the most beautiful and the most decorative. Bars are the most honest — you can read your own volume off them. Breath is the quietest and the only one that doesn't compete with your own voice for attention.</p>
+</section>
+
+<!-- ================= 3 ================= -->
+<section>
+  <div class="shead"><span class="snum">03</span><h2>The settle</h2></div>
+  <p class="ssub">The day closing. This is the emotional centre of the gate — the one animation that carries meaning rather than polish, because it's the moment the day becomes a fact.</p>
+
+  <div class="lab" id="lab3"></div>
+
+  <p class="note"><b>What I'd watch for</b>Fling has real spring physics and feels earned. Stamp is decisive and final — closer to a verdict being recorded. Draw is the gentlest, and the only one that would feel the same on a broken day as a kept one, which might be exactly right.</p>
+</section>
+
+<section style="border:none">
+  <div class="shead"><span class="snum">04</span><h2>On the palettes</h2></div>
+  <p class="ssub">All three fix the measured failure in v1's theme: <b>#60646A tested at 3.03:1 and fails the 4.5:1 minimum</b>, and the old outline colour at 1.72:1 made the <i>unsettled</i> ring nearly invisible — hiding the exact state that signals the app is dying.</p>
+
+  <div class="lab" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
+    <div class="opt"><p class="oname" style="margin-bottom:8px">Ash</p>
+      <p class="odesc">Closest to v1. Near-black, bone ink, one oxide red. Kept is bright, broken is a warm ash, unsettled is a hollow ring you can actually see. Quiet, serious, and it lets the engravings carry all the character.</p></div>
+    <div class="opt"><p class="oname" style="margin-bottom:8px">Slate &amp; Brass</p>
+      <p class="odesc">Cool blue-black ground with warm brass as the <i>kept</i> colour — so a kept day literally glows and a broken one goes cold blue. The most emotionally legible at a glance, and the furthest from where v1 was.</p></div>
+    <div class="opt"><p class="oname" style="margin-bottom:8px">Plate</p>
+      <p class="odesc">Warm dark brown-black with bone ink — the ground an engraving would actually be printed on. The most coherent with the illustration direction you picked, and the only one that doesn't feel like software.</p></div>
+  </div>
+
+  <p class="note"><b>Honest caveat</b>The display face here is Georgia, not Fraunces — web pages can't load the real font without shipping a 300 KB file, and it fails silently rather than warning you. Judge the <i>motion and the colour</i> from this page; judge the typography on the phone.</p>
+
+  <div class="ask">
+    <h3>What I need back</h3>
+    <ol>
+      <li><b>One palette</b>, or a mix — "Ash but with Brass's kept colour" is a valid answer.</li>
+      <li><b>One motion per section.</b> Or tell me what's missing from all three.</li>
+      <li><b>Anything that felt slow.</b> You'll see these thousands of times; anything that makes you wait twice is wrong.</li>
+    </ol>
+  </div>
+</section>
+</div>
+
+<script>
+(() => {
+  const root = document.documentElement;
+  root.setAttribute("data-pal", "ash");
+  document.querySelectorAll(".pal").forEach(b => b.addEventListener("click", () => {
+    document.querySelectorAll(".pal").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    root.setAttribute("data-pal", b.dataset.set);
+  }));
+
+  const CLAIM = "I am someone who trains when I don't feel like it.";
+  const LINES = ["I am someone who trains", "when I don't feel like it."];
+
+  /* ---------- helpers ---------- */
+  const el = (t, c, h) => { const n = document.createElement(t); if (c) n.className = c;
+    if (h !== undefined) n.innerHTML = h; return n; };
+
+  function optShell(host, name, desc, build) {
+    const wrap = el("div", "opt");
+    const head = el("div", "ohead");
+    head.append(el("p", "oname", name));
+    const btn = el("button", "play", "Replay");
+    head.append(btn);
+    const ph = el("div", "ph"), sc = el("div", "sc");
+    ph.append(sc); wrap.append(head, ph, el("p", "odesc", desc));
+    host.append(wrap);
+    const run = build(sc);
+    btn.addEventListener("click", run);
+    // first play when scrolled into view
+    new IntersectionObserver((e, o) => {
+      if (e[0].isIntersecting) { run(); o.disconnect(); }
+    }, { threshold: .4 }).observe(ph);
+    return run;
+  }
+
+  /* ================= 1 · claim arrival ================= */
+  const lab1 = document.getElementById("lab1");
+
+  function claimScreen(sc, mode) {
+    sc.innerHTML = "";
+    sc.append(el("p", "cap", "NIGHT 19 OF 28"));
+    sc.append(el("div", "grow"));
+    const body = el("div", "a-" + mode);
+    if (mode === "word") {
+      CLAIM.split(" ").forEach((w, i) => {
+        const s = el("span", "word", w + " "); s.style.animationDelay = (i * 55) + "ms";
+        body.append(s);
+      });
+      body.className = "a-word claim";
+    } else if (mode === "line") {
+      LINES.forEach((l, i) => {
+        const ln = el("div", "ln"); const sp = el("span", null, l);
+        sp.style.animationDelay = (i * 110) + "ms"; ln.append(sp); body.append(ln);
+      });
+      body.className = "a-line claim";
+    } else {
+      body.className = "a-bloom claim"; body.textContent = CLAIM;
+    }
+    const at = el("p", "said attrib",
+      'from what you said<br>"the days I actually go are the days I almost didn\'t"');
+    at.style.marginTop = "16px";
+    sc.append(body, at, el("div", "grow"));
+    return () => {
+      body.classList.remove("go"); at.classList.remove("go");
+      void body.offsetWidth;
+      body.classList.add("go"); at.classList.add("go");
+    };
+  }
+
+  [["Word by word", "word", "Each word blurs up out of nothing, 55ms apart. Most affecting; slowest to finish."],
+   ["Line rise", "line", "Whole lines climb out from behind a mask. Fast, confident, reads in one pass."],
+   ["Ink bloom", "bloom", "The whole sentence resolves out of blur at once. No sequence to sit through."]
+  ].forEach(([n, m, d]) => optShell(lab1, n, d, sc => claimScreen(sc, m)));
+
+  /* ================= 1b · emphasis ================= */
+  const lab1b = document.getElementById("lab1b");
+  const HEAD = "I am someone who trains ", TAIL = "when I don't feel like it.";
+
+  function emphScreen(sc, kind) {
+    sc.innerHTML = "";
+    sc.append(el("p", "cap", "NIGHT 19 OF 28"));
+    sc.append(el("div", "grow"));
+
+    const body = el("p", "a-bloom claim");
+    body.append(document.createTextNode(HEAD));
+    const em = el("span", "em"); em.textContent = TAIL;
+    em.style.position = "relative"; em.style.display = "inline";
+    body.append(em);
+
+    // The rule is its own element so it can be drawn on after the bloom settles.
+    const rule = el("span");
+    Object.assign(rule.style, { position: "absolute", left: "0", right: "0",
+      bottom: "-6px", height: "2px", background: "var(--accent)",
+      transformOrigin: "left center", transform: "scaleX(0)", borderRadius: "2px" });
+
+    if (kind === "underline") { em.append(rule); }
+    if (kind === "colour")    { em.style.color = "var(--accent)"; em.style.transition = "color .5s"; }
+    if (kind === "italic")    { em.style.fontStyle = "italic"; em.append(rule); }
+
+    const at = el("p", "said attrib",
+      'from what you said<br>"the days I actually go are the days I almost didn\'t"');
+    at.style.marginTop = "16px";
+    sc.append(body, at, el("div", "grow"));
+
+    return () => {
+      body.classList.remove("go"); at.classList.remove("go");
+      rule.style.transition = "none"; rule.style.transform = "scaleX(0)";
+      if (kind === "colour") { em.style.transition = "none"; em.style.color = "var(--ink)"; }
+      void body.offsetWidth;
+      body.classList.add("go"); at.classList.add("go");
+      setTimeout(() => {
+        rule.style.transition = "transform .72s cubic-bezier(.22,.9,.24,1)";
+        rule.style.transform = "scaleX(1)";
+        if (kind === "colour") { em.style.transition = "color .8s ease"; em.style.color = "var(--accent)"; }
+      }, 900);
+    };
+  }
+
+  [["Underline", "underline", "The sentence resolves, then a rule draws itself left-to-right under the operative half. The colour arrives as a gesture, not a state."],
+   ["Ink shift", "colour", "The same words warm from bone to oxide after the bloom settles. No new shape on screen — the type itself changes temperature."],
+   ["Italic + rule", "italic", "Italic carries the emphasis on its own; the rule confirms it. The most typographic, and the most bookish."]
+  ].forEach(([n, k, d]) => optShell(lab1b, n, d, sc => emphScreen(sc, k)));
+
+  /* ================= 2 · hold to speak ================= */
+  const lab2 = document.getElementById("lab2");
+  const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+  // synthesised speech-like envelope: syllables under a slow breath
+  function amp(t) {
+    const syl = Math.abs(Math.sin(t * 6.1)) * .55 + Math.abs(Math.sin(t * 9.7 + 1.2)) * .3;
+    const breath = .55 + .45 * Math.sin(t * .8);
+    const jit = .85 + .15 * Math.sin(t * 31.3);
+    return Math.min(1, syl * breath * jit);
+  }
+
+  function speakScreen(sc, kind) {
+    sc.innerHTML = "";
+    sc.append(el("p", "cap", "TONIGHT"));
+    const stg = el("div", "stage");
+    const cv = document.createElement("canvas");
+    const W = 230, H = 230, dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + "px"; cv.style.height = H + "px";
+    const tmr = el("div", "tmr", "0:00");
+    stg.append(cv, tmr); sc.append(stg);
+    sc.append(el("p", "said", "release to finish"));
+    const ctx = cv.getContext("2d");
+    ctx.scale(dpr, dpr);
+
+    let raf = null, t0 = 0;
+    const hist = new Array(90).fill(0);
+
+    function frame(now) {
+      const t = (now - t0) / 1000;
+      if (t > 6) { cancelAnimationFrame(raf); raf = null; return; }
+      const a = amp(t);
+      hist.push(a); hist.shift();
+      tmr.textContent = "0:" + String(Math.floor(t)).padStart(2, "0");
+      const ink = css("--ink"), ink3 = css("--ink3");
+      ctx.clearRect(0, 0, W, H);
+      const cx = W / 2, cy = H / 2;
+
+      if (kind === "ring") {
+        const acc = css("--accent"), brk = css("--broken");
+        // No gradient. Each layer is a solid body of its own colour, drawn back to
+        // front so the smaller shapes sit ON the larger ones. Depth comes from
+        // overlap and occlusion — the way stacked paper reads — not from a fade.
+        const layers = [
+          { fill: brk, line: brk, w: 1.0, fa: .16, la: .40, r: 20, lag: 30, amp: 16 },
+          { fill: ink3, line: ink, w: 1.2, fa: .22, la: .55, r: 10, lag: 15, amp: 22 },
+          { fill: acc, line: acc, w: 2.0, fa: .34, la: .95, r: 0,  lag: 0,  amp: 28 },
+        ];
+        layers.forEach(L => {
+          ctx.beginPath();
+          for (let i = 0; i <= 140; i++) {
+            const th = (i / 140) * Math.PI * 2;
+            const idx = (i * 0.62 + L.lag) | 0;
+            const r = 56 + hist[Math.min(hist.length - 1, idx)] * L.amp + L.r;
+            const x = cx + Math.cos(th - Math.PI / 2) * r, y = cy + Math.sin(th - Math.PI / 2) * r;
+            i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+          }
+          ctx.closePath();
+          ctx.fillStyle = L.fill;   ctx.globalAlpha = L.fa * (.6 + a * .4);  ctx.fill();
+          ctx.strokeStyle = L.line; ctx.globalAlpha = L.la * (.55 + a * .45);
+          ctx.lineWidth = L.w;      ctx.stroke();
+        });
+        ctx.globalAlpha = 1;
+      } else if (kind === "bars") {
+        const N = 40, gap = 4, bw = 3;
+        const total = N * (bw + gap) - gap, x0 = cx - total / 2;
+        ctx.fillStyle = ink;
+        for (let i = 0; i < N; i++) {
+          const v = hist[hist.length - N + i] ?? 0;
+          const h = 4 + v * 84;
+          ctx.globalAlpha = .35 + v * .65;
+          ctx.beginPath();
+          ctx.roundRect(x0 + i * (bw + gap), cy - h / 2, bw, h, 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      } else { // breath
+        const r = 48 + a * 30;
+        const g = ctx.createRadialGradient(cx, cy, r * .25, cx, cy, r * 1.5);
+        g.addColorStop(0, ink3); g.addColorStop(1, "transparent");
+        ctx.globalAlpha = .32 + a * .3; ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(cx, cy, r * 1.5, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.strokeStyle = ink; ctx.lineWidth = 1.3; ctx.globalAlpha = .75; ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+      raf = requestAnimationFrame(frame);
+    }
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      hist.fill(0);
+      t0 = performance.now(); raf = requestAnimationFrame(frame);
+    };
+  }
+
+  [["Ring", "ring", "Three phase-offset contours wind your voice around a circle. The one you asked for."],
+   ["Bars", "bars", "A level meter. Least beautiful, most honest — you can read your own volume."],
+   ["Breath", "breath", "One soft circle that swells with you. Quietest; doesn't compete with your own voice."]
+  ].forEach(([n, k, d]) => optShell(lab2, n, d, sc => speakScreen(sc, k)));
+
+  /* ================= 3 · settle ================= */
+  const lab3 = document.getElementById("lab3");
+
+  function settleScreen(sc, kind) {
+    sc.innerHTML = "";
+    sc.append(el("p", "cap", "HOW DID TODAY LAND?"));
+    sc.append(el("div", "grow"));
+    const q = el("p", "said",
+      '"Didn\'t want to go. Went anyway. Forty minutes, wrecked after the shift."');
+    sc.append(q);
+    sc.append(el("div", "grow"));
+    const v = el("div", "verdict", "KEPT"); sc.append(v);
+    const spacer = el("div"); spacer.style.height = "22px"; sc.append(spacer);
+    const strip = el("div", "settle-strip");
+    ["k", "k", "b", "k", "u", "k"].forEach(c => strip.append(el("span", "mk " + c)));
+    const slot = el("span", "mk u"); slot.style.opacity = ".28"; strip.append(slot);
+    const flyer = el("span", "flyer"); strip.append(flyer);
+    sc.append(strip);
+
+    let raf = null;
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      slot.style.opacity = ".28"; flyer.style.opacity = "0"; flyer.style.transform = "none";
+      v.style.opacity = "1"; v.style.transform = "none";
+      const vRect = v.getBoundingClientRect(), sRect = strip.getBoundingClientRect();
+      const tRect = slot.getBoundingClientRect();
+      const x0 = vRect.left + vRect.width / 2 - sRect.left - 6;
+      const y0 = vRect.top + vRect.height / 2 - sRect.top - 6;
+      const x1 = tRect.left - sRect.left, y1 = tRect.top - sRect.top;
+
+      if (kind === "fling") {
+        flyer.style.opacity = "1";
+        // real spring: critically-ish damped, integrated per frame
+        let px = x0, py = y0, vx = 0, vy = (Math.random() * 0 - 260), last = null;
+        const k = 170, c = 17, m = 1;
+        v.style.transition = "opacity .2s"; v.style.opacity = ".25";
+        const step = now => {
+          if (last === null) last = now;
+          const dt = Math.min(.032, (now - last) / 1000); last = now;
+          const ax = (-k * (px - x1) - c * vx) / m, ay = (-k * (py - y1) - c * vy) / m;
+          vx += ax * dt; vy += ay * dt; px += vx * dt; py += vy * dt;
+          flyer.style.transform = `translate(${px}px,${py}px)`;
+          if (Math.hypot(px - x1, py - y1) < .6 && Math.hypot(vx, vy) < 6) {
+            flyer.style.opacity = "0"; slot.className = "mk k"; slot.style.opacity = "1";
+            return;
+          }
+          raf = requestAnimationFrame(step);
+        };
+        flyer.style.transform = `translate(${x0}px,${y0}px)`;
+        raf = requestAnimationFrame(step);
+      } else if (kind === "stamp") {
+        v.style.transition = "transform .12s cubic-bezier(.3,0,.8,.4), opacity .3s .1s";
+        v.style.transform = "scale(.965)"; v.style.opacity = ".25";
+        slot.className = "mk k";
+        slot.style.transition = "none"; slot.style.opacity = "0";
+        slot.style.transform = "scale(2.6)";
+        requestAnimationFrame(() => {
+          slot.style.transition = "opacity .16s, transform .34s cubic-bezier(.2,1.4,.35,1)";
+          slot.style.opacity = "1"; slot.style.transform = "scale(1)";
+        });
+      } else { // draw
+        v.style.transition = "opacity .5s"; v.style.opacity = ".25";
+        slot.className = "mk k";
+        slot.style.transition = "none"; slot.style.opacity = "0"; slot.style.transform = "scale(.2)";
+        requestAnimationFrame(() => {
+          slot.style.transition = "opacity .85s cubic-bezier(.3,.5,.2,1), transform .85s cubic-bezier(.3,.5,.2,1)";
+          slot.style.opacity = "1"; slot.style.transform = "scale(1)";
+        });
+      }
+    };
+  }
+
+  [["Fling", "fling", "Real spring physics — the mark is thrown into the record and settles. Feels earned."],
+   ["Stamp", "stamp", "It lands where it belongs, hard, and rebounds once. A verdict being recorded."],
+   ["Draw", "draw", "It simply grows into place. The same on a broken day as a kept one."]
+  ].forEach(([n, k, d]) => optShell(lab3, n, d, sc => settleScreen(sc, k)));
+})();
+</script>
+
+</body></html>

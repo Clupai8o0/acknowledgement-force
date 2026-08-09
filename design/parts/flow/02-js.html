@@ -1,0 +1,432 @@
+<script>
+(() => {
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+
+/* ── the graph ──────────────────────────────────────────────────────────────
+   kind: fwd = you did something · back = a way out · branch = the app decides
+   (one of D6's five triggers) · commit = the one act you cannot undo */
+const EDGES = [
+  ['yap','three','fwd','release'],
+  ['three','make','fwd','chose one'],
+  ['make','committed','commit','hold 5½s'],
+  ['committed','other','fwd',''],
+  ['other','morning','fwd','day 1'],
+  ['morning','gate','fwd','you close the day'],
+  ['gate','speak','fwd','hold to speak'],
+  ['speak','settle','fwd','release'],
+  ['settle','gone','fwd','throw it'],
+  ['gate','nottonight','fwd','Not tonight'],
+  ['nottonight','after','fwd','next morning'],
+  ['after','morning','loop','two taps'],
+  ['gone','morning','loop','tomorrow'],
+
+  ['three','yap','back','say more'],
+  ['make','three','back','a different one'],
+  ['speak','gate','back','start again'],
+  ['settle','speak','back','say it again'],
+  ['nottonight','gate','back','actually, tonight'],
+  ['gone','settle','back','undo'],
+
+  ['gate','firstmiss','branch','1st miss'],
+  ['gate','push','branch','vague'],
+  ['gate','second','branch','2nd'],
+  ['gate','trial','branch','3rd'],
+  ['gate','stopping','branch','you want out'],
+  ['gate','day7','branch','day 7'],
+  ['gate','day28','branch','day 28'],
+  ['day7','day28','fwd','21 days'],
+  ['day28','committed','loop','another 28'],
+];
+
+const N = {
+yap: { w:'Night one · A1', c:['D9','D3 spoken floor','D4'], h:`
+<p>One question and a microphone. The question is D4's selection rule read aloud: strip out
+everything that enforces itself — studies have deadlines, work has clients — and what is left is
+health, the job hunt, relationships. Nobody chases you for those.</p>
+<p>The transcript keeps your false starts and your lowercase. A cleaned-up quote is not a quote, and
+the next screen has to point at these exact words.</p>
+<p>The clock counts up. Never down — a countdown is the app grading your effort.</p>` },
+
+three: { w:'Night one · A2', c:['D9 attribution','Principle 5','D20 italic + rule'], h:`
+<p>Three sentences cut from what you just said, each carrying the quote it came from. That
+attribution is the mechanic, not decoration: <em>if the AI cannot cite you, it does not get to
+propose it.</em></p>
+<p>One accent rule exists. Picking moves it — it retracts off the sentence you left and draws under
+the one you chose, so you watch the scarcity rule instead of being told it.</p>` },
+
+make: { w:'Night one · A3', c:['D9 ceremony','D4 28 days'], h:`
+<p>The sentence is the screen and you can edit it. Then you hold the ring for five and a half
+seconds — long enough that you cannot do it while thinking about something else.</p>
+<p>Let go and it winds back over 2.4 s, slower than it filled, because backing out should not feel
+like a slap. The accumulator never resets, so two short holds add up to one long one.</p>
+<p><em>← pick a different sentence</em> sits top-left until the moment the hold starts, then goes.
+While the ring is filling there is one way out and it is to stop pulling.</p>` },
+
+committed: { w:'Night one · the one irreversible act', c:['D4','the flood amends D19'], h:`
+<p>Accent takes the whole window from under your thumb, holds, then drops back to the ground as
+<em>Committed.</em> blooms onto it. The colour never carries text: on that orange nothing clears
+4.5:1 — not white, not black, not pure #000.</p>
+<p><b>This is the only screen in Force with no way back on it.</b> D4 fixes 28 days on one sentence,
+and a screen that let you undo that would be the product apologising for its only demand. Every step
+before it is cheap precisely so this one can be expensive.</p>` , o:`
+<p><b>The flood amends D19.</b> D19 gives <code>accent</code> one use and DESIGN.md closes the list
+in as many words. A full-window field is a third use and by far the largest. Keep it and D19 changes;
+drop it and the same ceremony runs in <code>ink</code> for free.</p>` },
+
+other: { w:'Night one · A4', c:['D4 one + two','D12 the one mention','not in the record'], h:`
+<p>Two more claims from the same yap. They sit under your primary every morning. Nothing gates them
+and nothing settles them — a background claim that could be settled is a second gate in a smaller
+hat.</p>
+<p>Three holds on night one would be three ceremonies, and a ceremony you perform three times in five
+minutes is a form.</p>`, o:`
+<p><b>FORCE-V2 does not say how these get created.</b> D4 fixes that there are up to two; D9
+describes night one as picking <em>one</em> and stops. Everything on this screen is my reading. It
+needs to become a decision, because the morning beat already shows two of them standing.</p>` },
+
+morning: { w:'The loop · B1', c:['D5 no lock','D4'], h:`
+<p>Ten seconds. Your claim, and the single thing today that would count as evidence for it. That
+second part is what makes the evening measurable — <em>did I do what I said</em> needs you to have
+said something.</p>
+<p>No close button, because there is nothing to escape. D5 allows one gate a day and this is not it.</p>` },
+
+gate: { w:'The loop · the wall', c:['D5','D18 NSPanel','D3 Tempo','D16 never illustrated'], h:`
+<p>The screen the whole product rests on. Borderless, no title bar, no traffic lights: a
+non-activating panel at screen-saver level that covers another app's full-screen Space without
+stealing focus. Drawing chrome on it would be a lie about the window.</p>
+<p>It fires when you close the day, not when a clock says so — 12:30am belongs to the day before.</p>
+<p>Nothing on it is <code>ink</code> except the claim. It opens with the consequence already known:
+Tempo says 52 minutes, ended 6:41pm. Force never asks whether you trained.</p>
+<p>v1 ran six to nine gates a day in week one, and that is the direct cause of <em>I scrolled through
+without reading</em>. Scarcity is the entire mechanism.</p>` },
+
+speak: { w:'The loop · speaking', c:['amends D20','D19 accent','D3 spoken floor'], h:`
+<p>One line, pinned at both ends, carrying a rolling 2.3 seconds of your voice — so what you said
+half a second ago is still travelling along it. A pause shows as a flat stretch moving across, which
+is the one thing a level meter cannot show you.</p>
+<p>At silence every sample is zero, so it is a still orange rule. Nothing appears and nothing swaps
+when you start talking; the same line begins carrying you.</p>`, o:`
+<p><b>This replaces D20's layered ring, and a permanently orange line means two accents on this
+screen</b> — the line and the emphasis mark. Three ways back to one: amend D19 to allow the
+microphone; retire the mark on any screen with a microphone; or return the line to grey at rest and
+accept that it looks like a divider.</p>` },
+
+settle: { w:'The loop · the fling', c:['D20 fling','D7 three states'], h:`
+<p>Pick the mark up and throw it. Real spring physics per frame, no easing curve — a hard throw
+overshoots, a gentle one does not. There is a 620 ms window where changing your mind redirects
+rather than restarts.</p>
+<p>This is what makes settling an act rather than a confirmation. A <code>broken</code> day you threw
+into the strip lands differently from one you picked off a menu.</p>
+<p>Three states, and <code>unsettled</code> is not <code>broken</code>: broken means you showed up
+and lost, unsettled means you did not show up. A run of unsettled days is the app dying, and that is
+the one thing v1 could never see about itself.</p>` },
+
+gone: { w:'The loop · silence', c:['Principle 3','D12'], h:`
+<p>The mark lands and the panel goes. No closing line, no summary, no streak. Under Principle 3 there
+is nothing in the record tonight worth a sentence, and <b>silence is the default output, not the
+fallback.</b></p>
+<p>This is the argument for every other screen. The reason the app is allowed to say something on the
+fifth night is that it said nothing on the first four.</p>
+<p>A throw can miss, so the day is not written until the panel actually goes. For those seconds
+<em>undo</em> sits beside the verdict.</p>` },
+
+nottonight: { w:'The loop · the exit', c:['D7 the escape hatch','D7 never hard-lock'], h:`
+<p>One tap. No confirm dialog, no guilt copy, no <em>are you sure</em>. The day logs as unsettled and
+the panel is gone.</p>
+<p>It says <em>Not tonight</em> — not Skip, not Later, not Remind me. Those are ways of not answering.
+This is an answer.</p>
+<p>The machine is never locked. macOS offers <code>windowShouldClose → false</code> and the spike
+verified it works; Force does not take it. v1's <code>// the "no escape" rule</code> produced exactly
+one outcome: total escape.</p>` },
+
+after: { w:'The loop · B6', c:['D7 rule 3','D12 nothing after one'], h:`
+<p>Not last night's question again — re-showing it builds a nag, and asking someone to speak about a
+day they declined to speak about is the same question in a costume.</p>
+<p>The two answers go different places. <em>Bad day</em> is a day that happened and hurt; the record
+keeps it and the app says nothing more. <em>Busy day</em> is the app's own early warning: two in a
+row and the gate is arriving at a time that does not fit your life.</p>` },
+
+firstmiss: { w:'Trigger · none', c:['D12 absence','D19 no reaction'], h:`
+<p>Nothing happens. The night after a day you kept and the night after a day you broke are
+pixel-identical apart from one 12 px mark in the strip — which is the record, not a reaction.</p>
+<p>D12 is not asking for restraint in the wording. It is asking for <b>absence</b>, and absence has to
+be designed on purpose or it fills itself in.</p>
+<p>If one bad day produces any visible response, you learn the app is watching for failure, and the
+cheapest way to avoid a reaction is to stop opening it. That is how v1 ended.</p>` },
+
+push: { w:'Trigger · vague testimony', c:['D6 trigger 2','D3 challenge, never grade'], h:`
+<p>It prints the four days. Not <em>you have been a little vague lately</em> — the actual four lines,
+all saying “went gym”. You cannot argue with your own record.</p>
+<p>It makes no judgement about the training, only about what the testimony has become.</p>
+<p><em>yeah, I know</em> is a real exit and it works. Pushing twice on the same point is nagging, and
+nagging is what gets an app deleted at 1am.</p>` },
+
+second: { w:'Trigger · second consecutive', c:['D12','D6 trigger 4'], h:`
+<p>Never miss twice — the mechanic the research identified and the one thing v1 never built. One miss
+is noise and gets zero guilt. Two consecutive changes the app's behaviour toward you.</p>
+<p><em>Nothing, I just didn't</em> is a complete answer to “what's going on this week”. That is a
+rule: no prompt may be phrased so that failure has no grammatical answer.</p>
+<p>The line that lands is the second one — <em>before that, none since day 3</em>. Impossible without
+the record, which is the whole reason it is worth saying.</p>` },
+
+trial: { w:'Trigger · third consecutive', c:['D12','D4 rewording is free'], h:`
+<p>Three in a row. Is this claim wrong, or is this week wrong?</p>
+<p>Both exits are real. Miscalibrated claim: rewrite the wording, free, and the 28 days do not reset.
+Hostile week: name it and the app genuinely backs off. If <em>the week is wrong</em> led to more
+pushing it would be a fake option, and one fake option poisons every other choice the app offers.</p>
+<p>No third option called “I'll try harder”. That is the one answer with no consequence attached, so
+it is the one everybody picks, and it teaches the app nothing.</p>
+<p>The thing on trial is a sentence. A claim can be wrong without anybody having failed.</p>` },
+
+stopping: { w:'Trigger · the receipt', c:['D4 receipt','D14 native only','D23'], h:`
+<p>The only place in the product where the app argues for staying, and it does it without a verb
+aimed at you: 19, 11, 9 — front-loaded, in the order you would count them, each a fact only your
+record contains. Then a stake you can picture.</p>
+<p>You cannot do this from a keyboard. Retiring is native-only, and the receipt rule does half the
+work on its own: exiting requires a microphone because it requires you to say it.</p>
+<p>A log of what you have abandoned and why is the most useful document about you that could exist.
+The receipt is not punishment.</p>` },
+
+day7: { w:'Review · day 7', c:['D9','D16 illustration','D23 properly long'], h:`
+<p>A week of real evidence including at least one bad day. You can rewrite the wording; you cannot
+stop until day 28.</p>
+<p>The observation is about the testimony, not the training and not you: <em>twice you wrote “went
+gym” and nothing else</em> is a fact about words on a screen. It is also the setup for the push — if
+the pattern continues, the gate has already earned the right to name it.</p>
+<p>Illustration is allowed here and banned on the gate. What repeats must be abstract or absent; what
+is rare can be vivid.</p>` },
+
+day28: { w:'Review · the window closes', c:['D4 retirement window','D6 trigger 5'], h:`
+<p>Counts, never a score. Three numbers side by side, no percentage, no grade, no comparison to last
+window. An AI that scores you becomes an opponent you game or resent — and you can lie to it for
+free.</p>
+<p>Three ways out and only one costs anything. Stopping sits in the same list, in the same type, as
+keeping.</p>
+<p><em>You came back on the 12th without anyone asking you to</em> is only available because of D12:
+the app said nothing on the first and second miss. The silence earlier is what pays for this
+sentence.</p>` },
+
+record: { w:'Any time · native', c:['D7 three states','D4 revisions','D3 evidence'], h:`
+<p>Pick a day, see exactly what you said, verbatim. The moment you paraphrase someone's words back at
+them they are listening to a machine's summary of themselves.</p>
+<p>Window 1 keeps its four-day run of unsettled in full. That run is the most diagnostic thing in the
+panel — it is the shape of the app dying, and v1 could not draw it at all because
+<code>outline</code> measured 1.72:1.</p>
+<p>Three revisions of the sentence, and the middle one is the interesting one: <em>trains four times a
+week</em> is a habit in an identity costume, and it snaps the first week you get sick.</p>` },
+
+web: { w:'Any time · web', c:['D14','D13 two design systems'], h:`
+<p>Look for a control that settles a day. There is none on any screen, and no endpoint behind one
+either. The split is structural rather than a policy — there is nothing to disable because there is
+nothing to call.</p>
+<p>If you could settle a day in a browser tab you would settle it half-watching something else.
+Reflex-ticking with extra steps, which is v1's death in a new medium.</p>
+<p>Edit the wording: both. Settle, start, retire: app only. Wording is a thought you can have at a
+desk; the other three are the product.</p>` },
+
+counsel: { w:'Any time · D22', c:['D22 in v1 scope','D23 goes long','register undecided'], h:`
+<p>For when you are stuck. Any chatbot can debate two options; only this can say <em>you have claimed
+this for 19 days and defended it on 11</em>.</p>
+<p>It argues, then stops: <em>Both of those are real. You pick.</em> No recommendation dressed as a
+fact, no confidence score, no “based on your patterns I'd suggest”.</p>
+<p>This is where the acceptance test lives — <em>you should not be the one helping me organise my
+thoughts, Force should be</em> — and it only works because the loop fed it 19 days of evidence
+first.</p>`, o:`
+<p><b>The register is undecided.</b> COPY.md lists it: how blunt the Counsel is, and whether it
+differs from the gate's. The draft in the demo is deliberately blunter.</p>` },
+
+settings: { w:'Any time · D18', c:['D18','D12 never auto-offered','D8 4am','COPY §10'], h:`
+<p>Printing what strict mode <em>cannot</em> do is the only version of this screen that survives a
+user trying it. On Android any foreground app calling <code>setHideOverlayWindows(true)</code> —
+Settings does — makes the gate vanish. On macOS <code>kill -TERM</code> always wins.</p>
+<p>The first time someone escapes a gate that promised to be inescapable, every other sentence in the
+app loses credit.</p>
+<p>Strict mode is never auto-offered. You go looking for it on a good day, not after a bad night when
+the offer would be the app taking advantage of you.</p>
+<p>The day turns over at 4am, explained in lived terms: an 11pm session and a 1:30am one belong to
+the same day. Shifts are chaos; the clock has to match the life.</p>` },
+
+privateclosed: { w:'Any time · not in the record', c:['nothing here is decided','new','touches D5, D14, D16'], h:`
+<p>Closed, it names no sentence and shows no count — a count is information too. Open, it has its own
+claim, its own strip, its own testimony.</p>
+<p>The gate arrives at 11pm wherever you are: on a train, in a shared flat, with someone reading over
+your shoulder. A claim about an addiction is exactly the kind of sentence that makes the whole app
+unusable if it can show up uninvited. <b>The failure mode is not embarrassment. It is that you never
+write the claim in the first place.</b></p>
+<p>It never appears at the gate, nothing leaks into the surfaces that are not private, and the model
+context is separate — otherwise the app says something true and unexplainable on a shared screen.</p>`,
+o:`
+<p><b>The fork is yours.</b> §1b says state syncs to a server. <em>Device-only</em> means no sync, no
+restore, and losing the laptop loses that record — simple, and the promise is easy to keep.
+<em>End-to-end encrypted</em> syncs ciphertext the server cannot read, but the honest version means
+the web dashboard can never show them either. I would take device-only for v1.</p>` },
+};
+
+/* ── wires ────────────────────────────────────────────────────────────────── */
+const svg = $('#wires'), chart = $('#chart');
+const NS = 'http://www.w3.org/2000/svg';
+const COL = { fwd:'#333A40', loop:'#333A40', back:'#7A6552', branch:'#3E4A54', commit:'#B4553A' };
+
+function el(t, a) { const n = document.createElementNS(NS, t);
+  for (const k in a) n.setAttribute(k, a[k]); return n; }
+
+function draw() {
+  const cb = chart.getBoundingClientRect();
+  svg.setAttribute('viewBox', `0 0 ${cb.width} ${cb.height}`);
+  svg.setAttribute('width', cb.width); svg.setAttribute('height', cb.height);
+  svg.innerHTML = '';
+  const defs = el('defs');
+  for (const k in COL) {
+    const m = el('marker', { id:'h-'+k, viewBox:'0 0 10 10', refX:'8.5', refY:'5',
+      markerWidth:'6', markerHeight:'6', orient:'auto-start-reverse' });
+    m.appendChild(el('path', { d:'M0,1.4 L9,5 L0,8.6 z', fill:COL[k] }));
+    defs.appendChild(m);
+  }
+  svg.appendChild(defs);
+
+  const box = id => { const n = $(`[data-id="${id}"]`); if (!n) return null;
+    const r = n.getBoundingClientRect();
+    return { x:r.left-cb.left, y:r.top-cb.top, w:r.width, h:r.height,
+      cx:r.left-cb.left+r.width/2, cy:r.top-cb.top+r.height/2,
+      r:r.right-cb.left, b:r.bottom-cb.top }; };
+
+  for (const [from, to, kind, label] of EDGES) {
+    const a = box(from), b = box(to);
+    if (!a || !b) continue;
+    const c = COL[kind] || COL.fwd;
+    let d, lx, ly;
+    const sameRow = Math.abs(a.cy - b.cy) < 24;
+
+    if (sameRow && kind !== 'back') {
+      const y = a.cy - 9;
+      d = `M ${a.r+5} ${y} L ${b.x-9} ${y}`;
+      lx = (a.r + b.x) / 2; ly = y - 9;
+    } else if (sameRow) {                      /* a way back, under the forward line */
+      const y = a.cy + 13;
+      d = `M ${a.x-5} ${y} L ${b.r+9} ${y}`;
+      lx = (a.x + b.r) / 2; ly = y + 16;
+    } else if (kind === 'loop') {               /* long return: out to the left gutter */
+      const gx = 15;
+      d = `M ${a.x-5} ${a.cy+16} L ${gx+16} ${a.cy+16} Q ${gx} ${a.cy+16} ${gx} ${a.cy}`
+        + ` L ${gx} ${b.b-a.h/2} Q ${gx} ${b.cy+16} ${gx+16} ${b.cy+16} L ${b.x-9} ${b.cy+16}`;
+      lx = gx + 78; ly = (a.cy + b.cy) / 2;
+    } else {                                    /* down into the next band */
+      const midY = (a.b + b.y) / 2;
+      d = `M ${a.cx} ${a.b+5} L ${a.cx} ${midY-10} Q ${a.cx} ${midY} ${a.cx+Math.sign(b.cx-a.cx)*10} ${midY}`
+        + ` L ${b.cx-Math.sign(b.cx-a.cx)*10} ${midY} Q ${b.cx} ${midY} ${b.cx} ${midY+10} L ${b.cx} ${b.y-9}`;
+      if (Math.abs(b.cx - a.cx) < 12) d = `M ${a.cx} ${a.b+5} L ${b.cx} ${b.y-9}`;
+      /* seven branches leave the gate, so a label near the SOURCE puts seven
+         words on one line. Each sits above the thing it points at instead. */
+      if (kind === 'branch') { lx = b.cx; ly = b.y - 12; }
+      else { lx = (a.cx + b.cx) / 2; ly = Math.min(midY - 7, a.b + 21); }
+    }
+
+    const p = el('path', { d, fill:'none', stroke:c,
+      'stroke-width': kind === 'branch' ? 1 : kind === 'commit' ? 2 : 1.4,
+      'stroke-linecap':'round', 'marker-end':`url(#h-${kind})`,
+      opacity: kind === 'branch' ? .5 : kind === 'back' ? .82 : .9 });
+    if (kind === 'back') p.setAttribute('stroke-dasharray', '5 5');
+    svg.appendChild(p);
+
+    if (label) {
+      const t = el('text', { x:lx, y:ly, fill: kind==='back' ? '#8A7160'
+        : kind==='commit' ? '#B4553A' : '#6B737A',
+        'font-size':'12.5', 'text-anchor':'middle',
+        'font-family':'Inter, sans-serif', 'font-weight': kind==='commit' ? 600 : 500 });
+      t.textContent = label;
+      const bg = el('rect', { fill:'#08090A', rx:'3' });
+      svg.appendChild(bg); svg.appendChild(t);
+      const bb = t.getBBox();
+      bg.setAttribute('x', bb.x-5); bg.setAttribute('y', bb.y-1.5);
+      bg.setAttribute('width', bb.width+10); bg.setAttribute('height', bb.height+3);
+    }
+  }
+}
+
+/* ── the reader ───────────────────────────────────────────────────────────── */
+const panel = $('#panel'), notes = {};
+let open = null;
+
+function show(id) {
+  const n = N[id]; if (!n) return;
+  const node = $(`[data-id="${id}"]`);
+  $$('.node').forEach(x => x.classList.toggle('on', x === node));
+  open = id;
+  panel.innerHTML =
+    `<button class="x" aria-label="Close">&times;</button>
+     <p class="where">${n.w}</p>
+     <h3>${node.querySelector('.t').textContent}</h3>
+     <div class="chips">${n.c.map(t => `<span class="chip${
+       /not in the record|undecided|amends|new|nothing here/i.test(t) ? ' open' : ''
+       }">${t}</span>`).join('')}</div>
+     ${n.h}
+     ${n.o ? `<div class="note open" style="margin-top:20px"><h5>open — needs a call</h5>${n.o}</div>` : ''}
+     <h4>Your note</h4>
+     <textarea id="ta" placeholder="what does not make sense here?"></textarea>
+     <div class="pnav"><button class="btn" data-step="-1">&larr; Prev</button>
+       <button class="btn" data-step="1">Next &rarr;</button></div>`;
+  const ta = $('#ta', panel);
+  ta.value = notes[id] || '';
+  ta.addEventListener('input', () => {
+    notes[id] = ta.value.trim();
+    if (!notes[id]) delete notes[id];
+    node.classList.toggle('noted', !!notes[id]);
+    if (!$('.dot', node)) { const d = document.createElement('span');
+      d.className = 'dot'; d.textContent = '✓'; node.appendChild(d); }
+    tally();
+  });
+  $('.x', panel).onclick = close;
+  $$('[data-step]', panel).forEach(b => b.onclick = () => {
+    const ids = $$('.node').map(x => x.dataset.id);
+    const i = ids.indexOf(id) + (+b.dataset.step);
+    if (ids[i]) show(ids[i]);
+  });
+  panel.classList.add('on');
+  panel.scrollTop = 0;
+}
+function close() { panel.classList.remove('on'); $$('.node').forEach(x => x.classList.remove('on')); open = null; }
+
+$$('.node').forEach(n => n.addEventListener('click', () => show(n.dataset.id)));
+addEventListener('keydown', e => {
+  if (e.key === 'Escape') close();
+  if (!open || /^(input|textarea)$/i.test(e.target.tagName)) return;
+  const ids = $$('.node').map(x => x.dataset.id), i = ids.indexOf(open);
+  if (e.key === 'ArrowRight' && ids[i+1]) show(ids[i+1]);
+  if (e.key === 'ArrowLeft' && ids[i-1]) show(ids[i-1]);
+});
+
+/* ── the notes you leave ──────────────────────────────────────────────────── */
+function tally() {
+  const ks = Object.keys(notes);
+  $('#ncount').textContent = ks.length;
+  $('#nlist').textContent = ks.length
+    ? ks.map(k => $(`[data-id="${k}"] .t`).textContent).join(' · ') : 'click any box to leave one';
+}
+function toast(m) { const o = $('#out'); o.textContent = m; o.classList.add('on');
+  clearTimeout(o._t); o._t = setTimeout(() => o.classList.remove('on'), 2200); }
+
+$('#copy').onclick = async () => {
+  const ks = Object.keys(notes);
+  if (!ks.length) return toast('No notes yet — click a box and write one.');
+  const md = '# Force flow — notes\n\n' + ks.map(k =>
+    `## ${$(`[data-id="${k}"] .t`).textContent}  \n*${N[k].w}*\n\n${notes[k]}\n`).join('\n');
+  try { await navigator.clipboard.writeText(md); toast(`${ks.length} note${ks.length>1?'s':''} copied.`); }
+  catch { const t = document.createElement('textarea'); t.value = md; document.body.appendChild(t);
+    t.select(); document.execCommand('copy'); t.remove(); toast('Copied.'); }
+};
+$('#clear').onclick = () => {
+  if (!Object.keys(notes).length) return;
+  for (const k in notes) delete notes[k];
+  $$('.node').forEach(n => n.classList.remove('noted'));
+  tally(); toast('Cleared.');
+};
+
+tally();
+draw();
+addEventListener('resize', draw);
+new ResizeObserver(draw).observe(chart);
+(document.fonts?.ready || Promise.resolve()).then(() => setTimeout(draw, 60));
+setTimeout(draw, 400);
+})();
+</script>

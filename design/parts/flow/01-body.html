@@ -1,0 +1,179 @@
+<div class="wrap">
+<header class="top">
+  <h1>Force — the whole shape</h1>
+  <p class="lede">Every screen in the product and every way you get from one to the next.
+    <b>Click any box to read what it is and leave a note on it.</b> Your notes stay on this page;
+    <em>Copy notes</em> puts them all on the clipboard as markdown so you can paste them straight
+    back to me.</p>
+  <p class="lede" style="margin-top:14px">Solid arrows are the way forward. Dashed amber arrows are
+    ways <em>back</em> — every one of them is real in the demo. Thin arrows are branches the app
+    takes on its own, off one of D6's five triggers. The single orange edge marks the one act in the
+    product you cannot undo.</p>
+  <div class="legend">
+    <span><i></i> you did something</span>
+    <span><i class="b"></i> a way back</span>
+    <span><i class="t"></i> the app branches (D6)</span>
+    <span><i class="a"></i> irreversible</span>
+  </div>
+</header>
+
+<div class="bar">
+  <span class="n"><b id="ncount">0</b> notes</span>
+  <span class="n" style="color:#5A6167">·</span>
+  <span class="n" id="nlist" style="color:#6E757B;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:38vw"></span>
+  <span class="spacer"></span>
+  <button class="btn" id="copy">Copy notes</button>
+  <button class="btn" id="clear">Clear</button>
+</div>
+
+<div id="chart">
+  <svg id="wires" aria-hidden="true"></svg>
+
+  <!-- ══════════ once ══════════ -->
+  <section class="band">
+    <div class="bandhead"><h2>Once · night one</h2>
+      <p>You talk, it proposes, you commit. The whole act runs one time per pursuit and ends with
+        the only thing in Force you cannot take back.</p></div>
+    <div class="row">
+      <button class="node" data-id="yap"><span class="t">The yap</span>
+        <span class="s">One question, a microphone, no limit on what you say.</span>
+        <span class="tag">A1</span></button>
+      <button class="node" data-id="three"><span class="t">Three sentences</span>
+        <span class="s">Candidates cut from your own words, each with the quote it came from.</span>
+        <span class="tag">A2</span></button>
+      <button class="node" data-id="make"><span class="t">Make it yours</span>
+        <span class="s">Edit the sentence. Hold the ring five and a half seconds.</span>
+        <span class="tag">A3</span></button>
+      <button class="node commit" data-id="committed"><span class="t">Committed</span>
+        <span class="s">28 days on one sentence. No way back from here.</span>
+        <span class="tag">D4 · irreversible</span></button>
+      <button class="node" data-id="other"><span class="t">The other two</span>
+        <span class="s">Background claims. Read every morning, never gated, never settled.</span>
+        <span class="tag">A4 · not in the record</span></button>
+    </div>
+  </section>
+
+  <!-- ══════════ the loop ══════════ -->
+  <section class="band">
+    <div class="bandhead"><h2>Every day · the loop</h2>
+      <p>A ten-second briefing in the morning, and one gate at night — fired when you close the day,
+        not when a clock says so.</p></div>
+    <div class="row">
+      <button class="node" data-id="morning"><span class="t">The morning beat</span>
+        <span class="s">Your claim and the one thing today that would count as evidence.</span>
+        <span class="tag">B1 · no lock</span></button>
+      <button class="node" data-id="gate"><span class="t">The evening gate</span>
+        <span class="s">The wall. A borderless panel over whatever you were doing.</span>
+        <span class="tag">D5 · one a day</span></button>
+      <button class="node" data-id="speak"><span class="t">Speaking</span>
+        <span class="s">One line carrying your voice. No limit, no timer counting down.</span>
+        <span class="tag">amends D20</span></button>
+      <button class="node" data-id="settle"><span class="t">Settling</span>
+        <span class="s">Throw the mark at kept or broken. Undo while it is still landing.</span>
+        <span class="tag">D20 fling</span></button>
+      <button class="node" data-id="gone"><span class="t">The panel goes</span>
+        <span class="s">And the app says nothing at all.</span>
+        <span class="tag">Principle 3</span></button>
+    </div>
+    <div class="row" style="margin-top:clamp(26px,3vw,48px)">
+      <span class="gap"></span><span class="gap"></span>
+      <button class="node" data-id="nottonight"><span class="t">Not tonight</span>
+        <span class="s">One tap. No dialog, no guilt. The day logs as unsettled.</span>
+        <span class="tag">D7 · the exit</span></button>
+      <button class="node" data-id="after"><span class="t">The morning after</span>
+        <span class="s">Bad day, or busy day? Two taps and it closes.</span>
+        <span class="tag">B6</span></button>
+      <span class="gap"></span>
+    </div>
+  </section>
+
+  <!-- ══════════ triggers ══════════ -->
+  <section class="band">
+    <div class="bandhead"><h2>Only on a trigger · when it stops being a whisper</h2>
+      <p>Most nights the gate is one prompt and thirty seconds. It opens into a conversation on the
+        five triggers in D6 and on nothing else. These four are independent illustrations, not one
+        bad week.</p></div>
+    <div class="row">
+      <button class="node quiet" data-id="firstmiss"><span class="t">The first miss</span>
+        <span class="s">Nothing happens. Not a colour, not a word. This box is here to say so.</span>
+        <span class="tag">D12 · absence</span></button>
+      <button class="node" data-id="push"><span class="t">The push</span>
+        <span class="s">Four days of “went gym” printed back at you.</span>
+        <span class="tag">D6 · vague testimony</span></button>
+      <button class="node" data-id="second"><span class="t">Second in a row</span>
+        <span class="s">Now it asks. Never miss twice is the mechanic v1 never built.</span>
+        <span class="tag">D12</span></button>
+      <button class="node" data-id="trial"><span class="t">The claim on trial</span>
+        <span class="s">Is this claim wrong, or is this week wrong? Both exits are real.</span>
+        <span class="tag">D12 · third</span></button>
+      <button class="node" data-id="stopping"><span class="t">Stopping</span>
+        <span class="s">Costs one spoken receipt. You cannot do it from a keyboard.</span>
+        <span class="tag">D4 · D14</span></button>
+    </div>
+  </section>
+
+  <!-- ══════════ reviews ══════════ -->
+  <section class="band">
+    <div class="bandhead"><h2>Twice a window · the reviews</h2>
+      <p>The only two surfaces the app is allowed to go long on, because they are the only two you
+        sat down for.</p></div>
+    <div class="row">
+      <button class="node" data-id="day7"><span class="t">Day 7</span>
+        <span class="s">A week of evidence including a bad day. Reword it or keep it.</span>
+        <span class="tag">D9</span></button>
+      <button class="node" data-id="day28"><span class="t">Day 28</span>
+        <span class="s">Counts, never a score. Keep it, change the words, or stop.</span>
+        <span class="tag">D4 · the window</span></button>
+      <span class="gap"></span><span class="gap"></span><span class="gap"></span>
+    </div>
+  </section>
+
+  <!-- ══════════ any time ══════════ -->
+  <section class="band">
+    <div class="bandhead"><h2>Any time · you open these</h2>
+      <p>Nothing here interrupts you and nothing here can settle a day. The split is structural:
+        the web API has no endpoint that writes a verdict.</p></div>
+    <div class="row">
+      <button class="node" data-id="record"><span class="t">The record</span>
+        <span class="s">Every day, every word you said, every revision of the sentence.</span>
+        <span class="tag">E1 · native</span></button>
+      <button class="node" data-id="web"><span class="t">The dashboard</span>
+        <span class="s">Read it anywhere. Change the wording. That is all it can do.</span>
+        <span class="tag">D14 · web</span></button>
+      <button class="node" data-id="counsel"><span class="t">The Counsel</span>
+        <span class="s">For when you are stuck. Argues from your record, then stops.</span>
+        <span class="tag">D22</span></button>
+      <button class="node" data-id="settings"><span class="t">Settings</span>
+        <span class="s">The 4am boundary, four voices, and what strict mode cannot do.</span>
+        <span class="tag">D18 · D8</span></button>
+      <button class="node" data-id="privateclosed"><span class="t">Private</span>
+        <span class="s">Names no sentence, shows no count. Opens with Touch ID.</span>
+        <span class="tag">not in the record</span></button>
+    </div>
+  </section>
+</div>
+
+<div class="note open">
+  <h5>What this drawing is asking you</h5>
+  <p><b>Four shapes here are proposals, not decisions.</b> <em>The other two</em> — how background
+    claims get created — is my reading of D4, not something FORCE-V2 says. <em>Speaking</em> uses
+    the moving line, which amends D20's layered ring. <em>Committed</em> floods the window in
+    accent, which amends D19. <em>Private</em> is not in the record at all and carries its own fork:
+    device-only, or end-to-end encrypted.</p>
+  <p><b>And one rule the whole drawing rests on:</b> everything before a commitment is reversible,
+    the commitment is not, and the screen says which it is. Count the dashed arrows — there are
+    six, and none of them touch the orange edge. That rule is not in FORCE-V2 either and it
+    should be.</p>
+</div>
+
+<div class="note">
+  <h5>What is not drawn</h5>
+  <p>The phone. macOS ships first and alone for 28 consecutive days (D22), so the narrow layout is
+    a later pass. Also absent: strict mode's panel, which lives in settings and is never
+    auto-offered (D12); and the 28-day illustration, which regenerates per claim and only appears on
+    the reviews and the record (D16).</p>
+</div>
+</div>
+
+<aside id="panel" aria-label="About this screen"></aside>
+<div id="out" role="status"></div>

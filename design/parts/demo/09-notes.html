@@ -1,0 +1,682 @@
+/* ════════════════════════ why each screen is like this ════════════════════
+   The decision record has to stay attached to the pixels, or the next person to
+   open this re-decides something that was settled with reasons. Everything
+   tagged `open` is genuinely undecided and needs a call before code. */
+const NOTES = {
+a1: { t: ['D9', 'D3 spoken floor', 'D4 no-external-enforcer', 'D23 no limit'], h: `
+<h4>One question and a microphone</h4>
+<p>The question is D4's selection rule said out loud. Strip out everything that enforces itself —
+studies have deadlines, work has clients, DSEC has other humans — and what is left is health, the
+job hunt and relationships. Asking <em>what nobody chases you for</em> gets the same answer without
+making anyone read a table.</p>
+<h5>Verbatim, including the mess</h5>
+<p>Lowercase, unpunctuated, false starts left in. A cleaned-up quote is not a quote, and the next
+screen has to be able to point at these exact words.</p>
+<h5>The clock counts up, never down</h5>
+<p>D23: what the user says has no limit, ever. Truncating it is the app grading your effort, which
+it does not do.</p>
+<h5>The transcript sits under the voice</h5>
+<p>It is the output of the thing directly above it. Beside the line it read as a second panel
+competing for the same attention; underneath, the screen has one axis and one order — question,
+mouth, words.</p>` },
+
+a2: { t: ['D9 attribution', 'D2', 'D20 italic + rule', 'Principle 5'], h: `
+<h4>The interaction is the argument</h4>
+<p>Three rules drawn at once would be three pointers pointing at nothing. Watching the single rule
+retract right-to-left and redraw left-to-right under your pick is the scarcity rule demonstrated
+rather than asserted, and it costs one line of state.</p>
+<h5>The attribution is the mechanic</h5>
+<p>Every candidate carries the quote it came from, reproduced verbatim. It is the proof the
+sentence came out of your mouth rather than the model's. <strong>If the AI can't cite you, it
+doesn't get to propose it</strong> (D9).</p>
+<h5>Nothing explains the mark</h5>
+<p>An earlier version carried a line about the underlined half being the part that can be false. It
+read as an instruction about how to think, on the screen where you are supposed to be choosing. The
+mark teaches on its own: by the third night you have noticed it only ever sits under the half that
+today can break.</p>
+<h5>The third one is the good one</h5>
+<p><em>doesn't renegotiate at half seven</em> has a time and a place in it. You can see the kitchen.
+That is what D23 means by picturable, and it is why the messy transcript had to be kept intact.</p>
+<div class="openbox"><h5>proposed</h5>
+<p><strong>“Make it mine” is not in the record.</strong> D9 describes night one as picking one and
+stops. A click-through needs a way forward from this screen; whether it is a button, or picking
+itself advancing, is undecided.</p></div>` },
+
+a3: { t: ['D9 ceremony', 'D4 28 days', 'D20 ink bloom', 'the flood amends D19'], h: `
+<h4>Three things on the whole surface</h4>
+<p>Your claim, what committing costs you, and the hold. The sentence is live — edit it and the
+inverted copy follows it character for character.</p>
+<h5>Five and a half seconds, and it remembers</h5>
+<p>Long enough that you cannot do it while thinking about something else. Release and it falls back
+over ~2.4 s — slower than it filled, because backing out should not feel like a slap — and the
+accumulator never resets, so two short holds add up to one long one.</p>
+<h5>Why a hold and not a button</h5>
+<p>A click is indistinguishable from dismissing a dialog. And letting go shrinks the circle back, so
+backing out is as visible as going through — which is why the line under your thumb says
+<em>let go and it winds back</em> for exactly as long as that is true.</p>
+<h5>Two ways out, and they take turns</h5>
+<p><em>← pick a different sentence</em> sits top-left until the moment you start the hold, and then
+it goes. While the ring is filling there is one way out and it is to stop pulling; a second exit
+floating on the colour would be two answers to the same question.</p>
+<h5>The sentence inverts under the colour</h5>
+<p>Two copies of the screen, pixel-aligned: the normal one, and the same words in <code>bg</code>
+clipped to exactly the circle the flood has reached. The sentence doesn't get covered — it turns
+over as the colour arrives, and the boundary is the edge of the circle.</p>
+<h5>The rule gets out of the way first</h5>
+<p>The emphasis rule retracts the moment the hold starts, so the accent field and the accent mark
+are never on screen together. Otherwise the first half-second of every commit is two accents at
+once, which is the thing D19 exists to prevent.</p>
+<h5>The numeral had to go</h5>
+<p>A 46&nbsp;px <em>28</em> under the claim made the length of the pursuit the loudest thing on the
+screen. The commitment is the sentence; 28 is a condition attached to it, so it is one line of body
+text directly beneath.</p>
+<div class="openbox"><h5>read this before you like the flood</h5>
+<p>D19 gives <code>accent</code> <em>one use only</em>, and DESIGN.md closes the list in as many
+words: the emphasis mark, plus the ring contour while your thumb is down — <em>“That is the
+complete list.”</em> <strong>A full-window accent field is a third use and by far the largest.</strong>
+It is not an application of D19; it is a proposed amendment, and this demo has no authority to make
+that call.</p>
+<p>DESIGN.md already refused a smaller version of this move: a full-bleed illustration in accent is
+listed as <em>not decided</em>, because it “would put more of that colour on one screen than the rest
+of the app uses in a month.” A whole window is more than that again.</p>
+<p>The case for it is D16's generating principle — <em>what repeats must be abstract or absent; what
+is rare can be vivid</em> — and this fires about thirteen times a year. The case against is that
+D19's whole discipline is that the colour points at one thing. If you want it, it goes into
+FORCE-V2 as a numbered change to D19 with its reasoning. If you don't, the same ceremony runs in
+<code>ink</code> and costs nothing.</p>
+<p><strong>And it knowingly breaks D17.</strong> <code>bg</code> on <code>accent</code> measures
+3.87:1; <code>ink</code> on it is 4.07:1. Nothing passes 4.5:1 on that orange — not white, not
+black, not pure #000, which only reaches 4.30:1. Lighten the flood past a relative luminance of
+0.20 and dark text clears the floor; darken it below 0.144 and <code>ink</code> does. Either is a
+change to D19, which is the same call the flood itself needs.</p></div>` },
+
+'a3:done': { t: ['D20 ink bloom', 'D4 28 days', 'the flood amends D19'], h: `
+<h4>This is the one screen with no way back</h4>
+<p>Every step before it has one — <em>say more</em>, <em>pick a different sentence</em>,
+<em>start again</em>, <em>say it again</em>, <em>actually, tonight</em>. That is deliberate, and it
+is what buys this. <strong>D4 fixes 28 days on one sentence</strong>, and a screen that let you undo
+that would be the product apologising for its only demand.</p>
+<p>The rule underneath, and it needs to become a numbered decision: <strong>everything before a
+commitment is reversible, the commitment is not, and the screen says which it is.</strong> Force
+asks for exactly one irreversible act and can only ask honestly if everything around it is cheap.</p>
+<h4>The word waits for the ground</h4>
+<p>The colour never carries text. Accent takes the window, holds for ~420&nbsp;ms, then drops back
+to <code>bg</code> — and only then does <em>Committed.</em> bloom onto it. So the one moment that
+breaks the legibility floor is the moment with no reading in it.</p>
+<h5>The clock starts here</h5>
+<p>Nothing on night one is labelled provisional, because the felt sense of <em>this is what I'm
+sticking to</em> is load-bearing and a placeholder cannot produce it (D9). The 28-day window opens
+when the circle fills.</p>` },
+
+a4: { t: ['D4 one + two', 'D12 the one mention', 'not in the record'], h: `
+<h4>Why one hold and not three</h4>
+<p>Three holds on night one is three ceremonies, and a ceremony performed three times in five
+minutes is a form. D4 says the primary is chosen by <em>what your mind is most willing to quietly
+drop</em> — which means exactly one of the three is the one you'd lose. Committing all three with
+the same weight is a way of admitting you haven't picked.</p>
+<h5>No verdict, no strip, no mark</h5>
+<p>A background claim that could be settled is a second gate wearing a smaller hat. These are read,
+not answered. They surface again with their own evidence, and at day 7 and day 28.</p>
+<h5>“just the one for now” is a real exit</h5>
+<p>Someone whose yap produced one honest answer should not be handed two more to carry. The screen
+offers; it does not fill quotas.</p>
+<h5>The strict-mode line lands here</h5>
+<p>It came off the commit screen at your request, and <strong>D12 requires it be mentioned once at
+onboarding</strong> — so it has to land somewhere. If you want it gone entirely, that is a change to
+D12 and goes in the record.</p>
+<div class="openbox"><h5>this whole screen is a proposal</h5>
+<p><strong>FORCE-V2 does not say how the two background claims get created.</strong> D4 fixes that
+there are up to two; D9 describes night one as picking one and stops there. Everything here is my
+reading, not a decision — and it needs to become one, because the morning beat already shows two of
+them standing.</p></div>` },
+
+b1: { t: ['D5 no lock', 'D4 one + two', 'background claims — proposed'], h: `
+<h4>A briefing, not a trial</h4>
+<p>Your claim, and the single thing today that would count as evidence for it. This is also what
+makes the evening measurable: <em>did I do what I said</em> requires that you said something.</p>
+<h5>No close button is needed</h5>
+<p>There is nothing to escape. The window is dismissible by every normal means because it is not a
+gate — D5 allows exactly one of those a day and this is not it. That is why it is a small floating
+window and the gate is not.</p>
+<h5>The background two get reinforced by being read</h5>
+<p>Read every morning and never gated. They surface again only when their own evidence appears, or
+at the day-7 and day-28 reviews.</p>
+<div class="openbox"><h5>not in the record</h5>
+<p>FORCE-V2 fixes one primary and two background (D4) but never says how the background two are
+surfaced. This layout is a proposal. If you like it, it becomes a decision with its reasoning; if
+not, say so before the enum is built.</p></div>` },
+
+gate: { t: ['D5 the wall', 'D18 NSPanel', 'D20 ink bloom', 'D16 never illustrated', 'D3 Tempo'], h: `
+<h4>The screen the whole product rests on</h4>
+<p>Borderless, no title bar, no traffic lights — a non-activating panel at screen-saver level that
+covers another app's full-screen Space without stealing focus or switching Spaces. Drawing window
+chrome here would be a lie about the window, which is why this is the one surface in the demo with
+no frame around it.</p>
+<h5>The brightest thing is the sentence</h5>
+<p>Nothing on this screen is <code>ink</code> except the claim. The morning line, the Tempo line, the
+day letters and the exit are all <code>ink2</code> or <code>ink3</code>. Look away and back: your eye
+lands on the claim every time.</p>
+<h5>It opens with the consequence</h5>
+<p>Force never asks whether you trained. Tempo already knows — 52 minutes, ended 6:41pm. D3: numbers
+come from the source, never from a question.</p>
+<h5>No illustration. No exceptions.</h5>
+<p>D16 is absolute here. Decoration on this screen is the app patting you on the head at the moment
+it should be taking you seriously — and it is the most-repeated image in the product, so within
+three weeks it is furniture.</p>
+<h5>The exit is visible from the start</h5>
+<p><em>Not tonight</em> sits on the resting screen, not behind a menu. D7: the moment quitting the
+night gets expensive, you quit the app instead.</p>
+<h5>Nothing is separated by a line</h5>
+<p>Not the morning line from the claim, not the claim from the evidence, not the record strip from
+what is above it. A hairline between every section is what a layout does when it has not decided
+what belongs together — and on the screen that gets opened three hundred times, it is furniture by
+week two. The whitespace and the tracked labels carry it.</p>` },
+
+'gate:speak': { t: ['replaces D20\'s layered ring — amends D20', 'D19 accent, transient'], h: `
+<h4>One line, pinned at both ends</h4>
+<p>A carrier oscillation gives it the shape of a wave; your voice is its amplitude, read out of a
+rolling ~2.3&nbsp;s history — so what you said half a second ago is still travelling along it. A
+pause shows up as a flat stretch moving across, which is the one thing a level meter cannot show
+you.</p>
+<h5>Amplitude, not decoration</h5>
+<p>RMS per buffer to dBFS, floored at −58&nbsp;dB, gamma-shaped, then smoothed with an asymmetric
+attack and release — 26/s up, 8.5/s down. That asymmetry is most of why a meter reads as
+<em>voice</em> rather than as noise. This page has no microphone, so the envelope is synthesised
+with speech-like bursts; the smoothing is the real thing.</p>
+<h5>It is the same line at rest</h5>
+<p>There is no idle state and no live state — at silence every sample is zero, so the wave is a
+dead-straight accent rule that does not move. Speak and the same line starts carrying your voice.
+Nothing appears and nothing swaps, which is why it reads as an instrument rather than a widget.</p>
+<p>It used to rest as a grey hairline in <code>rule</code>, and it read as exactly what it looked
+like: a divider. Full colour at rest is not decoration — at 3.87:1 <code>accent</code> only clears
+D17's 3:1 mark floor at full strength, so it stays quiet by being <em>thin</em> (1.6&nbsp;px, growing
+to 2.6&nbsp;px while you speak) rather than by being faded.</p>
+<div class="openbox"><h5>this costs a second accent, and that is a D19 decision</h5>
+<p><strong>D20 locks the layered ring, and this is not it.</strong> The ring is still built and still
+correct. Swapping it for the line is an amendment that goes into FORCE-V2 with its reasoning.</p>
+<p><strong>And a permanently visible accent line means two accents on this screen</strong> — the line,
+and the emphasis mark under the falsifiable clause. Earlier the line only took the colour while you
+were speaking and the mark stood down for exactly that long, so the count stayed at one. A still
+orange line at rest gives that up.</p>
+<p>Three ways back to one, and they are all yours to pick. <strong>Keep both</strong> and amend D19
+to allow the microphone as a second use — the honest version of what is built here.
+<strong>Retire the mark on any screen that has a microphone</strong>, so the colour points at the one
+thing you have to do; the mark still runs everywhere else. Or <strong>put the line back to
+<code>rule</code> at rest</strong> and accept that it looks like a divider until you touch it.</p></div>` },
+
+'gate:settle': { t: ['D20 fling', 'D7 three states', 'D12 silence'], h: `
+<h4>Pick the mark up and throw it</h4>
+<p>Real spring physics integrated per frame — no CSS curve, nothing eased. The fling velocity goes
+straight into the spring, so a hard throw overshoots and a gentle one does not. There is a 620&nbsp;ms
+window before it commits, and changing your mind inside it redirects rather than restarts.</p>
+<h5>Underdamped, once, then still</h5>
+<p>A few percent of overshoot, one time, and at rest fast enough that you are not waiting on it. Two
+overshoots or a visible wobble has left D20 regardless of what the numbers say. The constants are
+not written here on purpose — they live in <code>settle_scene.dart</code>, and a number copied into
+prose is wrong the first afternoon someone tunes it.</p>
+<h5>Why it must be a throw</h5>
+<p>This is the piece that makes the settle an act rather than a confirmation. A <code>broken</code>
+day you threw into the strip lands differently from one you placed there — and you did that, not the
+app.</p>
+<h5>And a throw can miss</h5>
+<p>This is the only gesture in the product that writes to the record, so the day is not written until
+the panel actually goes. For those few seconds <em>undo</em> sits beside the verdict and puts the mark
+back. That is not the app commenting on your day — Principle 3 governs what it <em>says</em>, not
+whether it lets you correct a slip. A record that can be corrupted by a fumbled drag is not a record
+you would trust at day twenty.</p>
+<h5>Flutter's own spring can't do this</h5>
+<p><code>animateWith(SpringSimulation)</code> cannot retarget mid-flight, which is the entire reason
+to use a spring. Force writes its own simulation clock seeded from current position <em>and</em>
+velocity.</p>` },
+
+gone: { t: ['D12 nothing', 'Principle 3', 'D7'], h: `
+<h4>Then the app says nothing</h4>
+<p>The mark lands and the panel goes. No closing line, no summary, no “see you tomorrow”, no streak
+count. Under Principle 3 there is nothing in the record tonight worth a sentence, and
+<strong>silence is the default output, not the fallback</strong>.</p>
+<h5>This screen is the argument for every other screen</h5>
+<p>The reason the app is allowed to say something on the fifth night is that it said nothing on the
+first four. Every sentence Force spends is borrowed against this.</p>
+<h5>It is genuinely empty</h5>
+<p>What you are looking at is your own display with nothing on it. That is not a placeholder — it is
+the product working.</p>` },
+
+b5: { t: ['D7 the escape hatch', 'D7 never hard-lock'], h: `
+<h4>One tap</h4>
+<p>No confirm dialog, no guilt copy, no “are you sure”. The day logs as <code>unsettled</code> and the
+panel is gone. There is nothing else to show, which is the design.</p>
+<h5>The exit is a statement, not a dismissal</h5>
+<p>It says <em>Not tonight</em>. It does not say Skip, Close, Later, Maybe tomorrow or Remind me.
+Those are all ways of not answering; this is an answer.</p>
+<h5>unsettled is not broken</h5>
+<p>Broken means you showed up and lost. Unsettled means you didn't show up. Conflating them corrupts
+the record — and unsettled is the more diagnostic of the two, because a run of unsettled days is
+<em>the app dying</em>, and that is the one thing v1 could never see about itself.</p>
+<h5>The machine is never locked</h5>
+<p>macOS offers <code>windowShouldClose → false</code> and <code>.terminateCancel</code>; the
+strict-mode spike verified both work. Force does not take them. A gate blocking a machine you earn
+money on is a hostage situation with your income attached — and v1's <code>// the "no escape"
+rule</code> produced exactly one outcome: total escape.</p>` },
+
+b6: { t: ['D7 rule 3', 'D5 day-close-based', 'D12 nothing after one'], h: `
+<h4>Not the same question again</h4>
+<p>One smaller, different one. Re-showing last night's question builds a nag, and asking someone to
+speak about a day they already declined to speak about is the same question in a costume.</p>
+<h5>The two answers go different places</h5>
+<p><em>Bad day</em> is a day that happened and hurt — the record keeps it and the app says nothing
+more. <em>Busy day</em> is the app's own early warning: two of those in a row and the gate is
+arriving at a time that doesn't fit your life, which is a problem with the schedule, not with you.</p>
+<h5>Nothing happens after one</h5>
+<p>D12: on a first miss, genuinely nothing. No colour change, no “streak broken”, no gentle reminder.
+This screen is the entire response.</p>` },
+
+c1: { t: ['D12 nothing', 'D19 no reaction'], h: `
+<h4>These are the same screen</h4>
+<p>Press → and watch. The night after a day you kept and the night after a day you broke are
+pixel-identical apart from one 12&nbsp;px mark in the strip — which is the record, not a reaction.</p>
+<h5>Absence has to be designed</h5>
+<p>No banner, no colour shift on the claim, no softened copy, no “yesterday was tough”. D12 is not
+asking for restraint in the wording, it is asking for <em>absence</em>, and absence is a thing you
+design on purpose or it fills itself in.</p>
+<h5>Why it matters this much</h5>
+<p>If one bad day produces any visible response, you learn the app is watching for failure — and the
+cheapest way to avoid a reaction is to stop opening it. That is exactly how v1 ended.</p>
+<h5>Act III is illustrations, not one week</h5>
+<p>This screen continues the record: yesterday is day 19, which you settled at the gate. The three
+after it are each an independent illustration of one D6 trigger — you cannot have four vague nights
+and two consecutive misses and three consecutive misses in the same week.</p>` },
+
+c2: { t: ['D6 trigger 2', 'D3 challenge, never grade', 'COPY §5 once means once'], h: `
+<h4>A number, a span, and your own words back</h4>
+<p>It makes no judgement about the training. It observes only what the testimony has become, and it
+is a challenge you can answer.</p>
+<h5>The four lines are the argument</h5>
+<p>It doesn't say <em>you've been a little vague lately</em>. It prints the four days. You can't argue
+with your own record and you don't need the sentence explained.</p>
+<h5>Once means once</h5>
+<p><em>yeah, I know</em> is a real exit and it works. The app drops it and closes the day. Pushing
+twice on the same point is nagging, and nagging is the behaviour that gets an app uninstalled at
+1am.</p>
+<div class="openbox"><h5>not in the record</h5>
+<p>D23 settles that the gate is short by default with an expandable “more”; the affordance is
+undecided. Here the four quoted days <em>are</em> the more, revealed with the push rather than behind
+a control. That is a proposal.</p></div>` },
+
+c3: { t: ['D12 second consecutive', 'D6 trigger 4'], h: `
+<h4>Never miss twice</h4>
+<p>The core mechanic the research identified and the one thing v1 never implemented. One miss is
+noise and gets zero guilt; two consecutive changes the app's behaviour toward you.</p>
+<h5>“What's going on this week” leaves the door open</h5>
+<p>COPY §6: no prompt may be phrased so that failure has no grammatical answer. <em>Nothing, I just
+didn't</em> is a complete reply to this. <em>What did you get done?</em> would not have been.</p>
+<h5>The second fact is the one that lands</h5>
+<p><em>Before that, none since day 3</em> is impossible without the record, and it is the whole reason
+this is worth saying out loud. Two misses on their own could be a bad habit; two after nineteen clean
+days is an event.</p>
+<h5>Not tonight still works</h5>
+<p>Even here. The escape hatch is never withdrawn as pressure — the moment it is conditional, it stops
+being an exit and starts being a negotiation.</p>` },
+
+c4: { t: ['D12 third consecutive', 'D4 rewording is free'], h: `
+<h4>The sentence on this screen is D12's, word for word</h4>
+<p>Two real options, both nameable out loud, neither of them a verdict on you.</p>
+<h5>Both exits are real</h5>
+<p>Miscalibrated claim → rewrite the wording, always free (D4). Hostile week → name it, and the app
+genuinely backs off. If <em>the week is wrong</em> led to more pushing it would be a fake option, and
+one fake option poisons every other choice the app offers.</p>
+<h5>No third option called “I'll try harder”</h5>
+<p>That is the one answer with no consequence attached, so it is the one everybody picks and it
+teaches the app nothing.</p>
+<h5>Still not a trial of you</h5>
+<p>The thing on trial is a sentence. A claim can be wrong without anybody having failed, and that
+distinction is the difference between a record you keep and a record you avoid.</p>` },
+
+c5: { t: ['D4 receipt', 'D23', 'D14 native only'], h: `
+<h4>The exact sentence that produced D23</h4>
+<p>The rejected version: <em>“Drop it now and you're not deprioritising a habit — you're retiring a
+claim four days early, without the receipt.”</em> Three abstractions in twenty-three words. You
+cannot see a deprioritisation. There is a number in it and it does no work, because it hangs off the
+end of a concept you have already stopped parsing. Concreteness is not “contains a digit”.</p>
+<h5>Why the shipped one works</h5>
+<p>19, 11, 9 — front-loaded, in the order you would count them, each a fact only your record
+contains. Then a stake you can picture: a future you can see yourself not having. And it never tells
+you to stay.</p>
+<h5>You cannot do this from a keyboard</h5>
+<p>D14 makes retiring native-only, and the receipt rule does half the work on its own — exiting
+requires a microphone, because it requires you to say it.</p>` },
+
+d1: { t: ['D9 day seven', 'D16 illustration', 'D23 properly long'], h: `
+<h4>A week of real evidence, including a bad day</h4>
+<p>You can rewrite the wording; you cannot stop. D4 already permits rewording any time — day 7 is
+just the first time the app makes you look. <strong>Scroll it.</strong> This is one of the two
+surfaces where the app is allowed to go long, because it is one of the two you sat down for.</p>
+<h5>The observation is about the testimony</h5>
+<p>Not about the training, and not about you. <em>Twice you wrote “went gym”</em> is a fact about
+words on a screen. It is also the setup for the push — if the pattern continues, the gate has
+already earned the right to name it.</p>
+<h5>Why illustration is allowed here and banned on the gate</h5>
+<p>What repeats must be abstract or absent; what is rare can be vivid. The per-claim engraving
+regenerates every 28 days — roughly thirteen images a year, each made from a sentence you wrote and
+something you said out loud.</p>
+<h5>It inherits the palette</h5>
+<p>Black line art on white, knocked out by using its own luminance as the alpha channel and then
+recoloured to <code>ink3</code>. Not a segmentation model: matting eats thin hatch lines, and
+cross-hatching is the entire style.</p>
+<div class="openbox"><h5>not in the record</h5>
+<p>Which token the engraving recolours to is undecided. <code>accent</code> is disqualified by
+arithmetic — a full illustration in it would put more of that colour on one screen than the rest of
+the app uses in a month.</p></div>` },
+
+d2: { t: ['D4 first retirement window', 'D9 day 28', 'D6 trigger 5'], h: `
+<h4>Three ways out, and only one costs anything</h4>
+<p>Stopping sits in the same list, in the same type, as keeping. D4 wants the receipt because a log
+of what you've abandoned and why is the most useful document about you that could exist — not as
+punishment.</p>
+<h5>Counts, never a score</h5>
+<p>Three numbers side by side. No percentage, no grade, no comparison to last window. An AI that
+scores you becomes an opponent you game or resent — and you can lie to it for free.</p>
+<h5>The one line the record earns</h5>
+<p><em>You came back on the 12th without anyone asking you to</em> is true because of D12: on a first
+and second miss the app said nothing. The silence earlier is what makes this sentence available now.</p>
+<h5>Why the marks wrap at 14</h5>
+<p>28 marks at 32&nbsp;px each is 896&nbsp;px, and the day numbers are 15&nbsp;px and do not shrink to
+fit — so the row has to break. It breaks at 14 rather than wherever the container runs out, which
+makes each row a fortnight and the two halves of the window directly comparable. D17 forced the
+break; putting it somewhere meaningful was free.</p>` },
+
+e1: { t: ['D7 three states', 'D4 revisions', 'D3 evidence', 'D16'], h: `
+<h4>Pick a day and see exactly what you said</h4>
+<p>Reproduced verbatim. The moment you paraphrase someone's words back at them, they are listening
+to a machine's summary of themselves.</p>
+<h5>Windows repeat, the record doesn't reset</h5>
+<p>Window 1 has a four-day run of <code>unsettled</code> in it and the record keeps it in full. That
+run is the single most diagnostic thing in this panel — it is the shape of the app dying, and v1
+could not draw it at all because <code>outline</code> measured 1.72:1.</p>
+<h5>Three revisions, and the middle one is the interesting one</h5>
+<p><em>trains four times a week</em> is a habit in an identity costume — it snaps the first week you
+get sick. You can watch it get repaired. D4: you will rewrite a claim five times before it fits.</p>
+<h5>The detail panel names the silence</h5>
+<p><em>Nothing was said back on this day. It was a first miss.</em> The record is allowed to explain
+its own quiet, because otherwise a user reading back a bad week concludes the app wasn't paying
+attention.</p>` },
+
+e2: { t: ['D14', 'D13 two design systems'], h: `
+<h4>Look for a control that settles a day</h4>
+<p>There isn't one, on any screen, and there is no endpoint behind one either. D14 draws the line in
+one place and it is structural rather than a policy: <strong>the web API has no endpoint that can
+write a day's verdict.</strong> There is nothing to disable, because there is nothing to call.</p>
+<h5>Why</h5>
+<p>If you could settle a day in a browser tab you would settle it half-watching something else —
+reflex-ticking with extra steps, which is v1's death reproduced faithfully in a new medium.</p>
+<h5>Edit the wording: both. Settle, start, retire: app only.</h5>
+<p>Wording is a thought you can have at a desk. The other three are the product.</p>
+<h5>Same tokens, different medium</h5>
+<p>D13's honest cost: the design system lives in two places, Dart for the app and React here. The tax
+is paid once at the token level — the same ten hexes, the same type scale, the same 4.5:1 floor, in a
+second renderer.</p>` },
+
+f1: { t: ['D22 in v1 scope', 'D23 goes long', 'register undecided'], h: `
+<h4>For when you're stuck</h4>
+<p>Any chatbot can debate two options; only Force can say <em>you've claimed this for 19 days and
+defended it on 11</em>. You opened this, so it is allowed to take its time.</p>
+<h5>It argues, then stops</h5>
+<p><em>Both of those are real. You pick.</em> The app states the position and stops — D23's rule, and
+the reason the last line has no verb aimed at you.</p>
+<h5>The acceptance test lives here</h5>
+<p>Your words: <em>“You should not be the one helping me organise my thoughts. Force should be.”</em>
+This is the surface where that either happens or doesn't, and it only works because the Loop fed it
+19 days of evidence first.</p>
+<h5>What it refuses to say</h5>
+<p>No recommendation dressed as a fact, no confidence score, no “based on your patterns I'd suggest”.
+Every sentence is either a count from the record or a consequence you can check.</p>
+<div class="openbox"><h5>not in the record</h5>
+<p>The Counsel's register — how blunt it is, and whether it differs from the gate's — is listed as
+undecided in COPY.md. This draft is deliberately blunter than the gate. Say if that is wrong before
+it becomes a decision.</p></div>` },
+
+f2: { t: ['D18', 'D12 never auto-offered', 'D8 4am boundary', 'COPY §10'], h: `
+<h4>The limits are the feature</h4>
+<p>Force may never claim you cannot get past it. On Android any foreground app calling
+<code>setHideOverlayWindows(true)</code> — Settings does, and so do system permission dialogs — makes
+the gate vanish. On macOS <code>kill -TERM</code> always wins, and Force Quit and Activity Monitor
+both go through that path.</p>
+<p>Printing what strict mode cannot do is the only version of this screen that survives contact with
+a user who tries it. The first time someone escapes a gate that promised to be inescapable, every
+other sentence in the app loses credit.</p>
+<h5>Never auto-offered</h5>
+<p>It lives here, was mentioned once at onboarding, and is never raised again. You go looking for it
+on a good day — not after a bad night, when it would be the app taking advantage of you.</p>
+<h5>4am, stated in lived terms</h5>
+<p>D8's boundary is explained as <em>an 11pm session and a 1:30am one belong to the same day</em>
+rather than as a configuration value. Shifts are chaos; the clock has to match the life.</p>
+<h5>Four voices, chosen for stance</h5>
+<p>Warm / flat / dry / hard. Gender and accent fall out of the stance rather than driving it, and you
+hear each one before choosing instead of reading an adjective.</p>
+<div class="openbox"><h5>default assumed, not decided</h5>
+<p>Discarding audio after transcription is my assumed default, not a decision in the record. It has
+to be stated on this screen either way, because users have to be told.</p></div>` },
+
+f4a: { t: ['nothing about this is in the record', 'new', 'touches D5, D14, D16, §1b'], h: `
+<h4>The closed state names nothing</h4>
+<p>No sentence, no count, no mark. <strong>A count is information too</strong> — “3 private claims,
+2 kept this week” tells a person reading over your shoulder most of what they'd want to know.</p>
+<h5>Why this exists</h5>
+<p>Some claims can't be on a screen that appears over whatever you're doing. The gate is a panel that
+arrives at 11pm wherever you are — on a train, in a shared flat, with someone reading over your
+shoulder. A claim about an addiction is exactly the kind of sentence that makes the whole app
+unusable if it can show up uninvited, and <em>the failure mode isn't embarrassment, it's that you
+never write the claim in the first place.</em></p>` },
+
+f4b: { t: ['nothing about this is in the record', 'new'], h: `
+<h4>What it has to be, for it to be worth anything</h4>
+<p><strong>It never appears at the gate.</strong> The evening gate is a panel at screen-saver level
+that arrives over whatever is on your display — that is D18's whole design, and precisely why a
+private claim cannot be on it. Private claims settle inside private mode, when you go there. That is
+not a second gate; D5's one-gate rule is about the thing that interrupts you, and this never
+interrupts.</p>
+<p><strong>Nothing leaks into the surfaces that aren't private.</strong> Not the morning beat, not the
+record, not the web dashboard, not a notification, not the Counsel — unless you are inside private
+mode when you ask.</p>
+<p><strong>The model context is separate.</strong> Whatever the AI knows about a private claim is not
+available to it when it is writing your ordinary evening line. Otherwise the app says something true
+and unexplainable on a shared screen, which is worse than saying nothing.</p>
+<p><strong>No illustration.</strong> D16 generates a per-claim engraving every 28 days and puts it on
+the record. A private claim gets none — or gets one that only exists inside private mode. Undecided,
+but it cannot be the current behaviour.</p>
+<div class="openbox"><h5>the real fork, and it is yours to call</h5>
+<p>FORCE-V2 §1b says <em>state syncs to a server</em>, and that was deliberate: cloud sync and
+restore. Private claims put it under pressure, because the reason to keep something private is
+usually not “hide it from my flatmate” alone.</p>
+<p><strong>Device-only</strong> — private claims never leave the machine. No sync, no restore; lose
+the laptop and you lose that record. Simple, and the promise is easy to keep.
+<strong>End-to-end encrypted</strong> — they sync, but the key is derived on-device and the server
+holds ciphertext it cannot read. More work, and the honest version means the web dashboard can never
+show them either, because the browser would need the key.</p>
+<p>I would take device-only for v1 and say so plainly in the UI, because a privacy promise you can
+explain in one sentence is worth more than one you can only explain in a paragraph. But this is a
+decision with a real cost either way and it goes in the record with its reasoning.</p></div>` },
+};
+
+const notesEl = $('#notes');
+function paintNotes() {
+  const s = STEPS[cur];
+  const n = NOTES[s.s + ':' + s.st] || NOTES[s.s];
+  if (!n) { notesEl.innerHTML = ''; return; }
+  notesEl.innerHTML =
+    `<div class="tags">${n.t.map(t => `<span class="tag${
+      /open|proposed|not in|amends|new|undecided|nothing about/i.test(t) ? ' open' : ''
+      }">${t}</span>`).join('')}</div>` + n.h;
+  notesEl.scrollTop = 0;
+}
+
+/* ════════════════════════ the index ════════════════════════ */
+const WORDS = ['Zero','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten',
+  'Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen',
+  'Twenty','Twenty-one','Twenty-two','Twenty-three','Twenty-four','Twenty-five','Twenty-six',
+  'Twenty-seven','Twenty-eight','Twenty-nine','Thirty'];
+$('#nstates').textContent = WORDS[STEPS.length] || STEPS.length;
+/* the bar has room for a short act label; the index has room for the real one */
+const ACT_FULL = {
+  'Act III · Pressure': 'Act III · When it stops being a whisper',
+  'Act V · The record': 'Act V · Reading the record',
+  'Act VI · The rest': 'Act VI · The rest of the product',
+};
+const actsEl = $('#acts');
+const order = [];
+STEPS.forEach((s, i) => {
+  let col = order.find(o => o.act === s.act);
+  if (!col) { col = { act: s.act, items: [] }; order.push(col); }
+  col.items.push({ s, i });
+});
+actsEl.innerHTML = order.map(col =>
+  `<div class="actcol"><h3>${ACT_FULL[col.act] || col.act}</h3>${col.items.map(({ s, i }) =>
+    `<button class="jump" data-i="${i}">${s.n}<em>${
+      s.h.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ')}</em></button>`).join('')}</div>`
+).join('');
+$$('.jump', actsEl).forEach(b => b.addEventListener('click', () => {
+  closeIndex(); show(+b.dataset.i);
+}));
+function markIndex() {
+  $$('.jump', actsEl).forEach(b => b.classList.toggle('on', +b.dataset.i === cur));
+}
+const indexEl = $('#index');
+const openIndex = () => { indexEl.classList.add('on'); markIndex(); };
+const closeIndex = () => indexEl.classList.remove('on');
+$('#t-index').onclick = () => indexEl.classList.contains('on') ? closeIndex() : openIndex();
+$('#i-start').onclick = () => { closeIndex(); show(0, { replay: true }); };
+$('#where').onclick = () => indexEl.classList.contains('on') ? closeIndex() : openIndex();
+indexEl.addEventListener('click', e => { if (e.target === indexEl) closeIndex(); });
+
+/* ════════════════════════ the bloom tuner ════════════════════════ */
+const tuner = $('#tuner');
+const T = { dur: $('#t-dur'), blur: $('#t-blur'), shape: $('#t-shape'), lead: $('#t-lead'),
+  stag: $('#t-stag') };
+let loop = null;
+function readTuner() {
+  B.dur = +T.dur.value; B.blurK = +T.blur.value / 100;
+  B.shape = +T.shape.value / 100; B.lead = +T.lead.value / 100;
+  MOT.stag = +T.stag.value / 100;
+  $('#v-stag').textContent = MOT.stag.toFixed(2) + '×';
+  compileBloom();                       /* the curve IS the stylesheet rule */
+  $('#v-dur').textContent = (B.dur / 1000).toFixed(2) + ' s';
+  $('#v-blur').textContent = B.blurK.toFixed(2) + ' × size';
+  $('#v-shape').textContent = B.shape < .12 ? 'straight'
+    : B.shape < .42 ? 'nearly straight' : B.shape < .62 ? 'smoothstep'
+    : B.shape < .88 ? 'held' : 'smootherstep';
+  $('#v-lead').textContent = (B.lead >= 0 ? '+' : '') + B.lead.toFixed(2);
+  const at = f => `${Math.round((1 - shaped(f)) * 100)}/${
+    Math.round(clamp01(shaped(f * (1 + B.lead))) * 100)}`;
+  $('#tout').innerHTML =
+    `<span style="color:#6E757B">blur% / ink% at</span> ` +
+    `<b>${Math.round(B.dur * .25)} ms</b> — ${at(.25)} &nbsp;·&nbsp; ` +
+    `<b>${Math.round(B.dur * .5)} ms</b> — ${at(.5)} &nbsp;·&nbsp; ` +
+    `<b>${Math.round(B.dur * .75)} ms</b> — ${at(.75)}<br>` +
+    `each part of the screen arrives in <b>${ARRIVE} ms</b> — the sentence takes ` +
+    `<b>${(B.dur / ARRIVE).toFixed(2)}×</b> as long<br>` +
+    `rule draws no sooner than <b>${((B.dur + RULE_GAP) / 1000).toFixed(2)} s</b> (D20's gap) ` +
+    `and never before the screen has finished`;
+  const w = $('#twarn');
+  /* D20 says "about 1.15 s". Outside a reasonable band around that, the panel
+     says so — including at the shipped default, which IS below it on purpose. */
+  if (B.dur > 1300) {
+    w.hidden = false;
+    w.innerHTML = `<strong>${(B.dur / 1000).toFixed(2)} s amends D20</strong>, which fixes ~1.15 s ` +
+      `and argues it: this plays once a night, and slow is what was rejected by day twenty. ` +
+      `Going slower is a decision for the record.`;
+  } else if (B.dur < 1050) {
+    w.hidden = false;
+    w.innerHTML = `<strong>${(B.dur / 1000).toFixed(2)} s is below D20's ~1.15 s</strong> — an ` +
+      `amendment, and the reason is on this panel: the rest of the screen arrives in ` +
+      `${ARRIVE} ms, and a sentence taking three times that long reads as a different motion ` +
+      `rather than the same one. Bringing them within half a step of each other is what makes ` +
+      `the entrance one thing. It goes in the record with that reasoning, or the D20 preset ` +
+      `puts it back.`;
+  } else w.hidden = true;
+  $$('#tprofile button').forEach(b => {
+    const p = PROFILES[b.dataset.prof];
+    b.classList.toggle('on', Math.abs(p.dur - B.dur) < 1 && Math.abs(p.blurK - B.blurK) < .01
+      && Math.abs(p.shape - B.shape) < .01 && Math.abs(p.lead - B.lead) < .01);
+  });
+}
+Object.values(T).forEach(i => i.addEventListener('input', () => { readTuner(); playBloom(); }));
+$$('#tprofile button').forEach(b => b.addEventListener('click', () => {
+  const p = PROFILES[b.dataset.prof];
+  T.dur.value = p.dur; T.blur.value = p.blurK * 100;
+  T.shape.value = p.shape * 100; T.lead.value = p.lead * 100;
+  readTuner(); playBloom();
+}));
+function playBloom() { show(cur, { replay: true }); }
+$('#t-play').onclick = playBloom;
+$('#t-loop').onclick = e => {
+  if (loop) { clearInterval(loop); loop = null; e.target.textContent = 'Loop'; return; }
+  e.target.textContent = 'Stop';
+  playBloom();
+  loop = setInterval(playBloom, B.dur + 1400);
+};
+$('#t-bloom').onclick = () => {
+  tuner.classList.toggle('on');
+  $('#t-bloom').classList.toggle('on', tuner.classList.contains('on'));
+  if (tuner.classList.contains('on')) playBloom();
+};
+$('#t-notes').onclick = () => {
+  const on = notesEl.classList.toggle('on');
+  document.body.classList.toggle('notes', on);
+  $('#t-notes').classList.toggle('on', on);
+  /* the stage just changed width; the canvases have to be told, because
+     nothing fired a resize */
+  setTimeout(() => { lines.forEach(L => { L.measure(); L.draw(); });
+    floods.forEach(f => f.place());
+    const sc = scenes[STEPS[cur].s];
+    settles.forEach(s => { if (sc?.contains(s.root) && !s.done) s.reset(); }); }, 330);
+};
+
+/* ════════════════════════ keyboard ════════════════════════ */
+addEventListener('keydown', e => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const typing = e.target.isContentEditable ||
+    /^(input|textarea)$/i.test(e.target.tagName || '');
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    if (indexEl.classList.contains('on')) closeIndex(); else openIndex();
+    return;
+  }
+  if (typing) return;
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); go(1); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); go(-1); }
+  else if (e.key === 'r' || e.key === 'R') show(cur, { replay: true });
+  else if (/^[1-6]$/.test(e.key)) { const a = ACTS[+e.key - 1]; if (a) show(a.first); }
+  else if (e.key === 'n' || e.key === 'N') $('#t-notes').click();
+  else if (e.key === 'b' || e.key === 'B') $('#t-bloom').click();
+  else if (e.key === 'h' || e.key === 'H') document.body.classList.toggle('nobar');
+});
+
+addEventListener('resize', () => {
+  lines.forEach(L => L.measure());
+  floods.forEach(f => f.place());
+  const scene = scenes[STEPS[cur]?.s];
+  settles.forEach(s => { if (scene?.contains(s.root) && !s.done) s.reset(); });
+});
+
+/* handle for poking at the motion from a console — the springs, the line and
+   the bloom are the interesting part and there is no reason to hide them */
+window.force = { STEPS, show, go, jumpTo, bloom, B, PROFILES, lines, settles, floods, shaped,
+  at: f => ({ blur: (1 - shaped(f)).toFixed(3), ink: clamp01(shaped(f * (1 + B.lead))).toFixed(3) }),
+  /* park a bloom at a fraction of its timeline, so the curve can be looked at
+     rather than only reasoned about */
+  freeze(f) {
+    const scene = scenes[STEPS[cur].s];
+    $$('[data-bloom]', scene).filter(el => !el.hidden && el.offsetParent)
+      .forEach(el => freezeBloom(el, f));
+    return f;
+  } };
+
+/* ════════════════════════ go ════════════════════════ */
+readTuner();
+show(0);
+(document.fonts?.ready || Promise.resolve()).then(() => {
+  lines.forEach(L => L.measure());
+  floods.forEach(f => f.place());
+  show(cur, { entrance: true });
+});
+})();
+</script>

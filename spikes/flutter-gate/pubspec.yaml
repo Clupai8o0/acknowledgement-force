@@ -1,0 +1,33 @@
+name: flutter_gate
+description: "The Evening Gate — Flutter stack spike. Throwaway."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  record: ^7.1.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  # No Material icon font — nothing in the spike uses one, and it is 1.6 MB.
+  uses-material-design: false
+
+  fonts:
+    # Both are variable fonts. Flutter picks the fvar *default* instance, and
+    # Fraunces defaults to wght 900 / opsz 9, so every text style below sets
+    # `fontVariations` explicitly. See lib/theme.dart.
+    - family: Fraunces
+      fonts:
+        - asset: assets/fonts/Fraunces.ttf
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter.ttf

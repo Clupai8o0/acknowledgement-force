@@ -1,3 +1,16 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# This tree is 12 GB on disk and ~75 MB of it is source. Everything below is
+# the other 11.9 GB: compiler and bundler output from four toolchains, all of
+# it reproducible from what is tracked. Measured 2026-08-09:
+#
+#   spikes/strict-mode/build      2.9 GB      force-old/.build      3.5 GB
+#   spikes/tauri-gate/…/target    1.6 GB      spikes/flutter-gate   1.6 GB
+#
+# The spikes are throwaway probes (see spikes/RESULTS.md). Their *source* is
+# worth keeping — the answer each one produced is the point — but nothing in
+# them needs to build from a clone.
+# ─────────────────────────────────────────────────────────────────────────────
+
 # Swift / Xcode
 .build/
 .swiftpm/
@@ -5,21 +18,61 @@
 *.xcworkspace/
 xcuserdata/
 DerivedData/
-*.moved-aside
-*.pbxuser
-*.mode1v3
-*.mode2v3
-*.perspectivev3
 
-# OS
+# Flutter / Dart — spikes/flutter-gate, spikes/flutter-showcase, spikes/strict-mode
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+*.iml
+
+# Rust / Tauri — spikes/tauri-gate
+target/
+
+# Node
+node_modules/
+.next/
+.turbo/
+
+# Android
+.gradle/
+local.properties
+*.apk
+*.aab
+
+# CocoaPods
+Pods/
+
+# Distributable builds (may contain baked keys — see force-old/.gitignore)
+dist/
+
+# Secrets. force-old/web/.gitignore already covers its own .env*; this is the
+# root-level backstop so a new subproject cannot leak one by not having a
+# .gitignore of its own yet.
+.env
+.env.*
+!.env*.example
+
+# OS / editor
 .DS_Store
 .AppleDouble
 .LSOverride
-
-# Editor
 .idea/
 *.swp
 *.swo
 
-# Distributable builds (may contain baked keys)
-dist/
+# ─────────────────────────────────────────────────────────────────────────────
+# NOT ignored, deliberately:
+#
+#   design/built/   6.6 MB of generated HTML. HANDOFF.md said this belongs
+#                   here, and that was the right instinct for generated output
+#                   — but these five pages ARE the design artifacts, they have
+#                   been lost once already (rebuilt 2026-08-07 from Claude file
+#                   history after every published URL 404'd), and 6.6 MB is a
+#                   cheap insurance premium against losing them twice. The
+#                   source in design/parts/ is tracked too, so build.py can
+#                   still regenerate them.
+#
+# Note `build/` above does not match `design/built/` — different word.
+# ─────────────────────────────────────────────────────────────────────────────

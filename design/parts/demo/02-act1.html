@@ -1,0 +1,175 @@
+<!-- ═════════════════════ A1 · the yap ═════════════════════ -->
+<section class="scene" data-scene="a1" data-state="rest" data-surface="float"
+         style="--fw:1180px;--fh:770px">
+  <div class="frame">
+    <div class="tbar"><i></i><i></i><i></i><span>Force</span></div>
+    <div class="pane">
+      <div class="col" style="--cw:900px;align-items:center;text-align:center">
+        <span class="eyebrow rise">Night one</span>
+        <h1 class="title" data-bloom style="margin-top:18px;max-width:23ch">What do you keep
+          dropping that nobody else will chase you for?</h1>
+        <p class="quiet rise" data-when="rest" style="margin-top:16px">talk as long as you want —
+          nothing you say here becomes a task</p>
+        <p class="quiet" data-when="speak" style="margin-top:16px;color:var(--ink2)">release when
+          you're done · no limit</p>
+
+        <div class="grow"></div>
+
+        <button class="hold rise" data-hold data-advance="a2">
+          <canvas class="linec" data-mode="line" style="width:clamp(420px,46vw,720px);height:clamp(82px,15vh,118px)"></canvas>
+          <span class="cap">Hold to speak</span>
+        </button>
+        <p class="quiet num rise" data-timer style="margin-top:14px">0:00</p>
+
+        <div class="grow"></div>
+
+        <!-- reserved height, so the layout does not jump as words arrive (D17) -->
+        <div class="rise" style="width:100%;max-width:52ch;text-align:left;min-height:118px">
+          <hr class="r" style="margin-bottom:16px">
+          <p class="said" data-type>…and the days i actually go are the days i almost didn't.
+            like i'll be standing in the kitchen at half seven already deciding not to and then i
+            go anyway and it's fine. it's always fine.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════════════ A2 · three sentences ═════════════════════ -->
+<section class="scene" data-scene="a2" data-surface="float" style="--fw:1180px;--fh:770px">
+  <div class="frame">
+    <div class="tbar"><i></i><i></i><i></i><span>Force</span></div>
+    <div class="pane">
+      <div class="col" style="--cw:880px">
+        <span class="eyebrow rise">Night one</span>
+        <h1 class="title" data-bloom style="margin-top:18px">Three sentences out of what you
+          said.</h1>
+
+        <div class="cands" data-cands data-stagger="166" data-from="300"
+             style="margin-top:clamp(24px,3.6vh,40px)">
+          <button class="cand on" data-cand="1">
+            <p class="claim sm">I am someone who trains
+              <span class="emph drawn">when I don't feel like it</span>.</p>
+            <p class="quiet attr" style="margin-top:10px">from what you said: “the days i actually
+              go are the days i almost didn't”</p>
+          </button>
+          <button class="cand" data-cand="2">
+            <p class="claim sm">I am someone who goes
+              <span class="emph">when my brain files it as optional</span>.</p>
+            <p class="quiet attr" style="margin-top:10px">from what you said: “when i've had a long
+              day my brain just files it under optional”</p>
+          </button>
+          <button class="cand" data-cand="3">
+            <p class="claim sm">I am someone who
+              <span class="emph">doesn't renegotiate at half seven</span>.</p>
+            <p class="quiet attr" style="margin-top:10px">from what you said: “standing in the
+              kitchen at half seven already deciding not to”</p>
+          </button>
+        </div>
+
+        <div class="grow" style="--gmin:20px"></div>
+        <div class="rise" style="display:flex;align-items:center;justify-content:space-between;
+                    gap:20px">
+          <p class="quiet">one of these is the one you'd drop first</p>
+          <button class="btn" data-advance="a3">Make it mine</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════════════ A3 · make it yours, and commit ═════════════════════ -->
+<section class="scene" data-scene="a3" data-state="edit" data-surface="float"
+         style="--fw:1180px;--fh:770px">
+  <div class="frame">
+    <div class="tbar"><i></i><i></i><i></i><span>Force</span></div>
+    <div class="pane raw">
+
+      <!-- the screen as it normally is -->
+      <div class="stk">
+        <div class="col" style="--cw:880px;align-items:center;text-align:center">
+          <span class="eyebrow rise">Night one</span>
+          <div style="flex:1.15;display:flex;flex-direction:column;justify-content:center;
+                      align-items:center;width:100%">
+            <p class="claim editable" contenteditable="true" spellcheck="false" data-bloom
+               data-claimsrc style="max-width:20ch">I am someone who trains
+              <span class="emph" data-emph>when I don't feel like it</span>.</p>
+            <p class="body rise" style="margin-top:clamp(20px,3vh,32px);max-width:42ch">28 days,
+              starting tonight. You can't swap it for a different one before then.</p>
+          </div>
+          <button class="hold rise" data-commit>
+            <canvas class="linec" data-mode="commit" style="width:172px;height:172px"></canvas>
+            <span class="cap">Hold to commit</span>
+          </button>
+          <p class="quiet letgo" data-letgo style="margin-top:14px">let go and it winds back</p>
+          <div style="flex:1;min-height:12px"></div>
+        </div>
+      </div>
+
+      <div class="flood" data-flood></div>
+
+      <!-- the same screen in `bg`, clipped to exactly the circle the flood has reached -->
+      <div class="stk inv" data-inv aria-hidden="true">
+        <div class="col" style="--cw:880px;align-items:center;text-align:center">
+          <span class="eyebrow">Night one</span>
+          <div style="flex:1.15;display:flex;flex-direction:column;justify-content:center;
+                      align-items:center;width:100%">
+            <p class="claim" data-claimcopy style="max-width:20ch">I am someone who trains
+              <span class="emph">when I don't feel like it</span>.</p>
+            <p class="body" style="margin-top:clamp(20px,3vh,32px);max-width:42ch">28 days,
+              starting tonight. You can't swap it for a different one before then.</p>
+          </div>
+          <div data-invslot style="display:flex;align-items:center;justify-content:center">
+            <span class="committing">Committing</span>
+          </div>
+          <p class="quiet" style="margin-top:14px;color:var(--bg)">let go and it winds back</p>
+          <div style="flex:1;min-height:12px"></div>
+        </div>
+      </div>
+
+      <div class="floodmsg" data-floodmsg>
+        <p class="closing" data-floodword>Committed.</p>
+        <p class="supp sub">Day 1 of 28. Tomorrow morning it's waiting for you.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════════════ A4 · the other two ═════════════════════ -->
+<section class="scene" data-scene="a4" data-surface="float" style="--fw:1180px;--fh:770px">
+  <div class="frame">
+    <div class="tbar"><i></i><i></i><i></i><span>Force</span></div>
+    <div class="pane">
+      <div class="col" style="--cw:860px">
+        <span class="eyebrow rise">Night one · after committing</span>
+        <h1 class="title" data-bloom style="margin-top:clamp(12px,2.4vh,18px);max-width:31ch">Two more things came
+          up that nobody else is going to chase you for.</h1>
+        <p class="supp rise" style="margin-top:clamp(10px,1.9vh,14px);max-width:56ch">They sit under your claim every
+          morning. Nothing gates them and nothing settles them.</p>
+
+        <div class="rows" data-stagger="202" data-from="330" style="margin-top:clamp(18px,2.6vh,30px)">
+          <div>
+            <p class="claim xs">I am someone who sends the application before I feel ready.</p>
+            <p class="quiet" style="margin-top:9px">from what you said: “it's been sitting in
+              drafts for like three weeks”</p>
+          </div>
+          <div>
+            <p class="claim xs">I am someone who calls back the same week.</p>
+            <p class="quiet" style="margin-top:9px">from what you said: “my mum rang twice last
+              week and i still haven't rung her back”</p>
+          </div>
+        </div>
+
+        <div class="rise" style="display:flex;gap:14px;margin-top:clamp(17px,2.4vh,26px)">
+          <button class="btn" data-advance="b1">Keep both</button>
+          <button class="btn plain" data-advance="b1">just the one for now</button>
+        </div>
+
+        <div class="grow" style="--gmin:16px"></div>
+        <hr class="r" style="margin-bottom:13px">
+        <p class="quiet rise">Settings has a stricter mode. This is the only time it gets
+          mentioned.</p>
+      </div>
+    </div>
+  </div>
+</section>

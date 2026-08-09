@@ -1,0 +1,375 @@
+<title>Force — the screens</title>
+
+<style>
+@font-face{font-family:Fraunces;src:url(data:font/woff2;base64,__FRAUNCES__) format('woff2');font-weight:100 900;font-style:normal;font-display:block}
+@font-face{font-family:Fraunces;src:url(data:font/woff2;base64,__FRAUNCES_IT__) format('woff2');font-weight:100 900;font-style:italic;font-display:block}
+@font-face{font-family:Inter;src:url(data:font/woff2;base64,__INTER__) format('woff2');font-weight:100 900;font-style:normal;font-display:block}
+
+:root{
+  /* page chrome — deliberately NOT the app palette, so screens read as lifted */
+  --page:#08090A; --panel:#0D0F10; --panel2:#111314;
+  --line:#1A1D20; --line2:#262A2E;
+  --chi:#DCE0E4; --cmid:#A2A9AF; --clo:#7C838A;
+  /* Ash — D19, the ten tokens verbatim */
+  --bg:#101112; --bg2:#191B1D;
+  --ink:#EDEAE4; --ink2:#A8AEB3; --ink3:#7E858B;
+  --kept:#EDEAE4; --broken:#8A7566; --unsettled:#5A6066;
+  --accent:#B4553A; --rule:#2B2F33;
+  --gut:32px;
+}
+/* Force is dark-only. The spikes were dark-only by spec; DESIGN.md lists a light
+   theme as undecided. Rendering Ash on a white ground would misrepresent it, so
+   this page commits to one world in both OS themes — a choice, not an omission. */
+:root[data-theme="light"],:root[data-theme="dark"]{color-scheme:dark}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--cmid);
+  font-family:Inter,system-ui,sans-serif;font-variation-settings:'wght' 400,'opsz' 17;
+  font-size:17px;line-height:1.62;-webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility}
+a{color:inherit}
+::selection{background:#2A3036;color:var(--chi)}
+
+/* ─────────────────────────── shell ─────────────────────────── */
+.wrap{display:grid;grid-template-columns:212px minmax(0,1fr);gap:44px;
+  max-width:1460px;margin:0 auto;padding:0 32px 160px}
+@media (max-width:1180px){.wrap{grid-template-columns:1fr;gap:0;padding:0 20px 100px}}
+
+.rail{position:sticky;top:0;align-self:start;max-height:100vh;overflow-y:auto;
+  padding:40px 0 40px;font-size:15px;line-height:1.5}
+@media (max-width:1180px){.rail{display:none}}
+.rail h4{margin:26px 0 8px;font-size:14px;letter-spacing:.16em;text-transform:uppercase;
+  color:#565D63;font-variation-settings:'wght' 600,'opsz' 14}
+.rail h4:first-child{margin-top:0}
+.rail a{display:block;padding:4px 0;color:var(--clo);text-decoration:none;
+  border-left:1px solid transparent;padding-left:11px;margin-left:-12px;
+  transition:color .18s,border-color .18s}
+.rail a:hover{color:var(--chi)}
+.rail a.on{color:var(--chi);border-left-color:var(--accent-rail,#3E464C)}
+.rail a:focus-visible{outline:2px solid #4A5359;outline-offset:2px;border-radius:2px}
+
+/* ─────────────────────────── page type ─────────────────────────── */
+.disp{font-family:Fraunces,Georgia,serif;color:var(--chi);
+  font-variation-settings:'wght' 400,'opsz' 60;line-height:1.02;letter-spacing:-.02em;
+  text-wrap:balance;margin:0}
+h2.sec{font-family:Fraunces,Georgia,serif;color:var(--chi);font-size:34px;
+  font-variation-settings:'wght' 400,'opsz' 34;letter-spacing:-.015em;margin:0;
+  line-height:1.12;text-wrap:balance}
+h3.pt{font-family:Fraunces,Georgia,serif;color:var(--chi);font-size:25px;
+  font-variation-settings:'wght' 420,'opsz' 25;letter-spacing:-.01em;margin:0;
+  line-height:1.16;text-wrap:balance}
+.lab{font-size:14px;letter-spacing:.2em;text-transform:uppercase;color:var(--clo);
+  font-variation-settings:'wght' 560,'opsz' 14;display:block}
+.pro{max-width:66ch;margin:0}
+.pro + .pro{margin-top:15px}
+.dim{color:var(--clo)}
+.num{font-variant-numeric:tabular-nums}
+em.k{font-style:normal;color:var(--chi);font-variation-settings:'wght' 560,'opsz' 17}
+code.h{font-family:Inter,sans-serif;font-variation-settings:'wght' 500,'opsz' 15;
+  font-size:15px;letter-spacing:.03em;font-variant-numeric:tabular-nums;color:var(--chi)}
+
+/* ─────────────────────────── masthead ─────────────────────────── */
+.mast{padding:88px 0 64px;border-bottom:1px solid var(--line)}
+.mast .disp{font-size:clamp(58px,9vw,116px);font-variation-settings:'wght' 300,'opsz' 120;
+  letter-spacing:-.035em}
+.mast .sub{margin:26px 0 0;max-width:60ch;font-size:19px;line-height:1.58;color:var(--chi);
+  font-variation-settings:'wght' 380,'opsz' 19}
+.mastgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  gap:26px;margin-top:52px;padding-top:32px;border-top:1px solid var(--line)}
+.mastgrid p{margin:8px 0 0;font-size:16px;line-height:1.55}
+
+/* ─────────────────────────── section + plate ─────────────────────────── */
+.sec-head{padding:96px 0 8px}
+.sec-head .lab{margin-bottom:16px}
+.sec-head .pro{margin-top:18px;font-size:18px;color:var(--cmid)}
+
+.plate{padding:52px 0;border-top:1px solid var(--line)}
+.plate:first-of-type{border-top:none}
+.plate-head{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:6px}
+.plate-head .no{font-size:14px;letter-spacing:.16em;color:#4E555B;
+  font-variation-settings:'wght' 600,'opsz' 14;font-variant-numeric:tabular-nums}
+.plate .cap{margin:14px 0 30px;max-width:70ch;font-size:17px}
+
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin:14px 0 0}
+.chip{font-size:14px;letter-spacing:.07em;padding:3px 9px;border:1px solid var(--line2);
+  border-radius:3px;color:var(--clo);font-variation-settings:'wght' 550,'opsz' 14;
+  white-space:nowrap}
+.chip.open{border-color:#4A3F38;color:#A98A78}
+.chip.new{border-color:#3A4650;color:#8FA3B2}
+
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 296px;gap:36px;align-items:start}
+@media (max-width:1340px){.stage{grid-template-columns:1fr}}
+.devbox{overflow-x:auto;padding-bottom:6px}
+.notes{font-size:16px;line-height:1.58;border-left:1px solid var(--line2);padding-left:20px}
+@media (max-width:1340px){.notes{border-left:none;border-top:1px solid var(--line2);
+  padding:20px 0 0;max-width:70ch}}
+.notes h5{margin:0 0 8px;font-size:14px;letter-spacing:.18em;text-transform:uppercase;
+  color:#565D63;font-variation-settings:'wght' 600,'opsz' 14}
+.notes p{margin:0 0 13px}
+.notes p:last-child{margin-bottom:0}
+.notes .q{color:var(--chi);border-left:2px solid var(--line2);padding-left:12px;
+  margin:16px 0;font-style:italic}
+
+.replay{display:inline-flex;align-items:center;gap:8px;background:none;cursor:pointer;
+  border:1px solid var(--line2);color:var(--clo);border-radius:3px;padding:6px 12px;
+  font:inherit;font-size:14px;letter-spacing:.14em;text-transform:uppercase;
+  font-variation-settings:'wght' 560,'opsz' 14;margin-top:16px;
+  transition:color .18s,border-color .18s}
+.replay:hover{color:var(--chi);border-color:#3B4247}
+.replay:focus-visible{outline:2px solid #4A5359;outline-offset:2px}
+
+/* ─────────────────────────── device frames ─────────────────────────── */
+.dev{background:var(--bg);position:relative;isolation:isolate}
+/* the macOS gate: a borderless non-activating NSPanel (D18). No title bar,
+   no traffic lights — drawing them would be a lie about the window. */
+.dev.panel{width:720px;height:618px;border-radius:14px;
+  box-shadow:0 0 0 1px #1E2225,0 34px 80px -20px #000,0 4px 16px -4px #000}
+/* `.dev` is display:block, so `.dev.win .app{flex:1}` never resolved and every
+   windowed screen sized itself to its content instead of its frame — which
+   collapsed the flex spacers and pushed A4's last line 9 px past the bottom
+   edge, where overflow:hidden ate it. Scoped to the two framed variants so the
+   specimen panels in G and H keep their own display. */
+.dev.win,.dev.browser{display:flex;flex-direction:column}
+.dev.win{width:880px;height:604px;border-radius:11px;overflow:hidden;
+  box-shadow:0 0 0 1px #202427,0 28px 66px -22px #000}
+.dev.small{width:512px;height:396px;border-radius:12px;
+  box-shadow:0 0 0 1px #1E2225,0 24px 56px -18px #000}
+.dev.browser{width:880px;height:604px;border-radius:11px;overflow:hidden;
+  box-shadow:0 0 0 1px #202427,0 28px 66px -22px #000}
+.dev.phone{width:390px;height:720px;border-radius:34px;overflow:hidden;
+  box-shadow:0 0 0 1px #202427,0 28px 66px -22px #000}
+.titlebar{height:38px;display:flex;align-items:center;gap:8px;padding:0 15px;
+  background:#141618;border-bottom:1px solid var(--rule);flex:0 0 auto}
+.tl{width:11px;height:11px;border-radius:50%;background:#2E3236}
+.titlebar .tt{margin-left:12px;font-size:14px;color:var(--ink3);letter-spacing:.05em;
+  font-variation-settings:'wght' 500,'opsz' 14}
+.urlbar{height:44px;display:flex;align-items:center;gap:10px;padding:0 14px;
+  background:#141618;border-bottom:1px solid var(--rule);flex:0 0 auto}
+.urlbar .u{flex:1;background:#0C0E0F;border:1px solid var(--rule);border-radius:6px;
+  height:26px;display:flex;align-items:center;padding:0 10px;font-size:14px;
+  color:var(--ink3);letter-spacing:.02em}
+
+/* ─────────────────────────── the app itself ─────────────────────────── */
+.app{position:absolute;inset:0;display:flex;flex-direction:column;
+  font-family:Inter,sans-serif;color:var(--ink2);font-size:17px;line-height:1.6;
+  font-variation-settings:'wght' 400,'opsz' 17}
+.dev.win .app,.dev.browser .app{position:static;flex:1;min-height:0}
+.win-body{flex:1;min-height:0;overflow:hidden;position:relative}
+
+.app .claim{font-family:Fraunces,Georgia,serif;color:var(--ink);font-size:30px;
+  font-variation-settings:'wght' 430,'opsz' 30;letter-spacing:-.4px;line-height:1.3;
+  margin:0}
+.app .claim.sm{font-size:26px;font-variation-settings:'wght' 430,'opsz' 26;
+  letter-spacing:-.3px}
+.app .claim.xs{font-size:22px;font-variation-settings:'wght' 430,'opsz' 22;
+  letter-spacing:-.2px}
+.app .title{font-family:Fraunces,Georgia,serif;color:var(--ink);font-size:24px;
+  font-variation-settings:'wght' 430,'opsz' 24;letter-spacing:-.2px;margin:0;line-height:1.24}
+.app .closing{font-family:Fraunces,Georgia,serif;color:var(--ink);font-size:28px;
+  font-variation-settings:'wght' 400,'opsz' 28;line-height:1.3;margin:0}
+.app .numeral{font-family:Fraunces,Georgia,serif;color:var(--ink);font-size:46px;
+  font-variation-settings:'wght' 400,'opsz' 46;font-variant-numeric:tabular-nums;line-height:1}
+.app .eyebrow{font-size:14px;letter-spacing:2.2px;text-transform:uppercase;color:var(--ink3);
+  font-variation-settings:'wght' 500,'opsz' 14}
+.app .body{font-size:17px;color:var(--ink2);margin:0}
+.app .supp{font-size:16px;color:var(--ink2);margin:0}
+.app .quiet{font-size:15px;color:var(--ink3);margin:0}
+.app .said{font-size:17px;color:var(--ink2);margin:0}
+.app hr{border:none;border-top:1px solid var(--rule);margin:0}
+
+/* the emphasis mark — D19's single chromatic use */
+.emph{position:relative;font-style:italic;font-family:Fraunces,Georgia,serif;
+  font-variation-settings:'wght' 430,'opsz' 30;white-space:nowrap}
+.emph::after{content:"";position:absolute;left:0;right:0;bottom:-.16em;height:2px;
+  background:var(--accent);transform:scaleX(0);transform-origin:left center;border-radius:1px}
+.emph.drawn::after{transform:scaleX(1);transition:transform .72s cubic-bezier(.16,1,.3,1)}
+.claim.sm .emph,.claim.xs .emph{font-variation-settings:'wght' 430,'opsz' 26}
+/* italic without the pointer — for a clause that is falsifiable but not the
+   one being pointed at right now. Carries no accent, by design. */
+.ital{font-style:italic;font-family:Fraunces,Georgia,serif;
+  font-variation-settings:'wght' 430,'opsz' 26}
+/* the rule retracts right-to-left when a different candidate is picked, so the
+   pointer visibly moves rather than teleporting */
+.emph:not(.drawn)::after{transform-origin:right center;
+  transition:transform .34s cubic-bezier(.55,0,1,.45)}
+
+/* ── candidate rows: hover, focus, pick ── */
+.cand{background:var(--bg);padding:17px 18px;cursor:pointer;border:none;width:100%;
+  text-align:left;font:inherit;color:inherit;display:block;position:relative;
+  transition:background-color .22s cubic-bezier(.16,1,.3,1)}
+.cand:hover{background:#151719}
+.cand:focus-visible{outline:2px solid var(--ink3);outline-offset:-2px}
+.cand.on{background:var(--bg2)}
+.cand::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:2px;
+  background:var(--ink3);transform:scaleY(0);transform-origin:center;
+  transition:transform .3s cubic-bezier(.16,1,.3,1)}
+.cand.on::before{transform:scaleY(1)}
+.cand .attr{transition:color .22s}
+.cand.on .attr{color:var(--ink2)}
+/* ── the commit flood ── PROPOSED, not decided: see A3 and H6.
+   An accent circle grows out of the ring under your thumb until it has taken
+   the whole window, then drops to the ground colour as the word arrives. The
+   colour never carries text: on an accent field, `ink` measures 4.07:1 and
+   `bg` 3.87:1, so both fail D17's 4.5:1. The flood is the act; the word waits
+   for the ground to come back. */
+.flood{position:absolute;border-radius:50%;background:var(--accent);
+  transform:scale(0);pointer-events:none;z-index:2;will-change:transform}
+.flood.done{background:var(--bg);transition:background-color .56s cubic-bezier(.16,1,.3,1)}
+.floodmsg{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:18px;opacity:0;pointer-events:none;
+  transition:opacity .3s}
+.floodmsg.in{opacity:1}
+.floodmsg .sub{opacity:0;transform:translateY(6px);
+  transition:opacity .5s cubic-bezier(.16,1,.3,1) .5s,transform .5s cubic-bezier(.16,1,.3,1) .5s}
+.floodmsg.in .sub{opacity:1;transform:none}
+
+/* Two copies of the same screen, pixel-aligned. The lower one is the screen as
+   normal; the upper one is the same words in `bg`, clipped to exactly the
+   circle the flood has reached. So the sentence inverts under the colour as it
+   arrives, rather than being covered by it. */
+.stack{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  text-align:center;padding:40px 56px 30px}
+.stack.inv{z-index:3;color:var(--bg);pointer-events:none;
+  -webkit-clip-path:circle(0px at 50% 70%);clip-path:circle(0px at 50% 70%)}
+.stack.inv .claim{color:var(--bg);text-shadow:none}
+.stack.inv .emph::after{background:var(--bg);transform:scaleX(0)}
+.stack.inv .body,.stack.inv .eyebrow{color:var(--bg)}
+.stack.inv.gone{opacity:0;transition:opacity .38s cubic-bezier(.16,1,.3,1)}
+.committing{font-size:15px;letter-spacing:2.4px;text-transform:uppercase;color:var(--bg);
+  font-variation-settings:'wght' 620,'opsz' 15}
+
+/* ── the commit hold, and what it becomes ── */
+.hold.busy .cap{color:var(--ink)}
+.committed-note{opacity:0;transform:translateY(6px);
+  transition:opacity .42s cubic-bezier(.16,1,.3,1),transform .42s cubic-bezier(.16,1,.3,1)}
+.committed-note.in{opacity:1;transform:none}
+/* the bloom keeps `color` transparent, so the caret has to be told separately
+   or it is invisible in the one field the user is supposed to type in */
+.editable{outline:none;border-bottom:1px solid transparent;transition:border-color .22s;
+  caret-color:var(--ink)}
+.editable:hover{border-bottom-color:var(--rule)}
+.editable:focus{border-bottom-color:var(--ink3)}
+
+/* Ink Bloom — the fill stays transparent the whole way through. The text is
+   ONLY its own zero-offset shadow, so at blur 0 the shadow IS the glyph. That
+   is the technique DESIGN.md prescribes over ImageFiltered(blur), which costs
+   a saveLayer per element — and it is why the fill must never fade in
+   alongside the blur, or you get a glow effect instead of a bloom. */
+/* The blur is animated on `text-shadow` itself, not through a registered
+   custom property. `@property` is not everywhere, and where it is missing the
+   length collapses to its initial value — the blur never happens, the fill was
+   already transparent, and you get a crisp sentence that only fades slightly.
+   That is exactly the failure this was reported as. text-shadow interpolates
+   natively in every engine, so the effect cannot silently not happen. */
+.bloom{color:transparent;text-shadow:0 0 0 var(--ink);--bb:40px}
+.claim.sm.bloom{--bb:34px}.claim.xs.bloom{--bb:28px}.closing.bloom{--bb:38px}
+/* The house curve is expo-out — it covers ~90% of its distance in the first
+   quarter of the duration. Correct for a panel sliding in; wrong here, because
+   it collapses the blur in ~250ms and then spends 900ms doing nothing visible.
+   A "1.15s bloom" that is over in a quarter second reads as no bloom at all.
+   So the shape is carried by explicit stops on a linear clock, and the whole
+   1.15s is spent resolving. Starts at zero opacity: nothing, then a haze, then
+   the sentence. */
+@keyframes bloomIn{
+  0%  {text-shadow:0 0 var(--bb) var(--ink);opacity:0}
+  14% {text-shadow:0 0 calc(var(--bb) * .88) var(--ink);opacity:.62}
+  38% {text-shadow:0 0 calc(var(--bb) * .58) var(--ink);opacity:.88}
+  62% {text-shadow:0 0 calc(var(--bb) * .30) var(--ink);opacity:1}
+  82% {text-shadow:0 0 calc(var(--bb) * .12) var(--ink)}
+  100%{text-shadow:0 0 0 var(--ink);opacity:1}
+}
+.bloom.playing{animation:bloomIn 1.15s linear both}
+.bloom .emph{color:inherit;text-shadow:inherit}
+.bloom[data-replayable]{cursor:pointer}
+@media (prefers-reduced-motion:reduce){.bloom.playing{animation:none}}
+
+/* controls */
+.hold{display:inline-flex;flex-direction:column;align-items:center;gap:14px;
+  background:none;border:none;cursor:pointer;font:inherit;padding:0;color:inherit}
+.hold .cap{font-size:15px;letter-spacing:2.4px;text-transform:uppercase;color:var(--ink2);
+  font-variation-settings:'wght' 560,'opsz' 15;margin:0}
+.hold:focus-visible{outline:2px solid var(--ink3);outline-offset:8px;border-radius:6px}
+.btn{background:none;border:1px solid var(--rule);border-radius:4px;color:var(--ink2);
+  font:inherit;font-size:15px;letter-spacing:2.4px;text-transform:uppercase;
+  font-variation-settings:'wght' 560,'opsz' 15;padding:11px 22px;cursor:pointer;
+  transition:color .18s,border-color .18s}
+.btn:hover{color:var(--ink);border-color:#3B4247}
+.btn:focus-visible{outline:2px solid var(--ink3);outline-offset:3px}
+.btn.plain{border:none;padding:11px 6px;text-transform:none;letter-spacing:0;font-size:17px;
+  font-variation-settings:'wght' 400,'opsz' 17;color:var(--ink3)}
+.btn.plain:hover{color:var(--ink2)}
+.field{background:var(--bg2);border:1px solid var(--rule);border-radius:5px;padding:14px 16px;
+  color:var(--ink);font:inherit;width:100%}
+
+/* record strip */
+.strip{display:flex;gap:0;align-items:flex-end}
+.strip .d{display:flex;flex-direction:column;align-items:center;gap:9px;width:42px}
+.strip.wide .d{width:29px}
+.strip .m{width:11px;height:11px;border-radius:50%;background:transparent}
+.strip .m.kept{background:var(--kept)}
+.strip .m.broken{background:var(--broken)}
+.strip .m.unsettled{background:none;box-shadow:inset 0 0 0 1.6px var(--unsettled)}
+.strip .m.none{box-shadow:inset 0 0 0 1px var(--rule)}
+.strip .dl{font-size:14px;color:var(--ink3);font-variation-settings:'wght' 450,'opsz' 14;
+  letter-spacing:.02em}
+.strip .d.today .dl{color:var(--ink2)}
+.strip .d.today .m{width:13px;height:13px}
+
+/* engraving — recoloured through a mask, never shipped as pixels of its own colour */
+.eng{background-color:var(--ink3);-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  -webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center;mask-position:center}
+.eng.tally{-webkit-mask-image:url(data:image/webp;base64,__MASK_TALLY__);
+  mask-image:url(data:image/webp;base64,__MASK_TALLY__)}
+.eng.hand{-webkit-mask-image:url(data:image/webp;base64,__MASK_HAND__);
+  mask-image:url(data:image/webp;base64,__MASK_HAND__)}
+
+/* page-level tables and swatches */
+table.t{border-collapse:collapse;width:100%;font-size:16px;font-variant-numeric:tabular-nums}
+table.t th{text-align:left;font-size:14px;letter-spacing:.14em;text-transform:uppercase;
+  color:#565D63;font-variation-settings:'wght' 600,'opsz' 14;padding:0 14px 10px 0;
+  border-bottom:1px solid var(--line2);white-space:nowrap}
+table.t td{padding:10px 14px 10px 0;border-bottom:1px solid var(--line);vertical-align:top}
+table.t td.ok{color:#8FA88F}table.t td.no{color:#B5837A}
+.sw{display:inline-block;width:15px;height:15px;border-radius:3px;vertical-align:-2px;
+  margin-right:9px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.09)}
+.tokgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(206px,1fr));gap:1px;
+  background:var(--line);border:1px solid var(--line);margin-top:26px}
+.tok{background:var(--page);padding:15px 16px}
+.tok .n{color:var(--chi);font-size:16px;font-variation-settings:'wght' 550,'opsz' 16}
+.tok .hex{font-size:15px;color:var(--clo);letter-spacing:.05em;font-variant-numeric:tabular-nums}
+.tok .r{font-size:15px;color:var(--clo);margin-top:5px;font-variant-numeric:tabular-nums}
+.tok .bar{height:26px;border-radius:3px;margin-bottom:11px;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.07)}
+
+.callout{border:1px solid var(--line2);border-radius:5px;padding:20px 22px;margin:26px 0 0;
+  background:var(--panel);font-size:16px}
+.callout.open{border-style:dashed;border-color:#43382F}
+.callout h5{margin:0 0 9px;font-size:14px;letter-spacing:.18em;text-transform:uppercase;
+  color:#A98A78;font-variation-settings:'wght' 600,'opsz' 14}
+.callout p{margin:0 0 12px}.callout p:last-child{margin-bottom:0}
+
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:26px}
+@media (max-width:820px){.pair{grid-template-columns:1fr}}
+.strike{text-decoration:line-through;text-decoration-color:#6B4A40;color:var(--clo)}
+
+/* The replay control belongs against the thing it replays. Anywhere else and
+   you are scrolling away from the screen to find the button that plays it. */
+.devfoot{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.replayer{display:inline-flex;align-items:center;gap:9px;background:none;
+  border:1px solid var(--line2);color:var(--clo);border-radius:4px;padding:7px 13px;
+  font:inherit;font-size:14px;letter-spacing:.14em;text-transform:uppercase;
+  font-variation-settings:'wght' 560,'opsz' 14;cursor:pointer;
+  transition:color .18s,border-color .18s}
+.replayer:hover{color:var(--chi);border-color:#3B4247}
+.replayer:focus-visible{outline:2px solid #4A5359;outline-offset:2px}
+.replayer .g{font-size:16px;line-height:1;display:inline-block}
+.devfoot .hint{font-size:14px;color:#565D63}
+
+/* nowrap headers are a legibility choice at desk width and an overflow bug on a
+   phone — the body must never scroll sideways */
+@media (max-width:760px){table.t th{white-space:normal}}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}
+}
+</style>

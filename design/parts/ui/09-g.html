@@ -1,0 +1,234 @@
+<section class="sec-head">
+  <span class="lab">Section G</span>
+  <h2 class="sec">Verification</h2>
+  <p class="pro">v1 shipped colours nobody had measured and the failures surfaced seven months
+    later, in a spike, by accident. So the checks below run in your browser against the screens
+    you just scrolled past — they read the rendered pixels rather than quoting the design doc. If
+    a plate above drifts, the numbers here go red on their own.</p>
+</section>
+
+<!-- ══════════════════════════ G1 ══════════════════════════ -->
+<article class="plate" id="g1">
+  <div class="plate-head"><span class="no">G1</span><h3 class="pt">Contrast, measured on this page</h3></div>
+  <div class="chips"><span class="chip">D17</span><span class="chip">WCAG 2.1 sRGB</span></div>
+  <p class="cap">Every row samples a real element from the screens above — its computed colour
+    against its computed background, walked up the tree until something opaque is found.</p>
+  <div id="contrast-out"></div>
+  <div class="callout" style="margin-top:26px">
+    <p>Two rows clear their floor and would fail a different one, which is the whole reason they
+      are marks rather than type. <code class="h">broken #8A7566</code> at 4.34:1 and
+      <code class="h">accent #B4553A</code> at 3.87:1 both pass 3:1 and both miss 4.5:1 — so any
+      text that <em class="k">names</em> a broken day is written in <code class="h">ink2</code>,
+      and the emphasised words stay <code class="h">ink</code> while the accent lives in the rule
+      beneath them. That is arithmetic on a locked palette, not a taste call.</p>
+    <p>Watch <code class="h">ink3</code> on a raised surface: <strong>4.62:1</strong>, with 0.12 of
+      headroom. Do not stack it on <code class="h">bg2</code> and then also reduce its opacity or
+      dim it on selection — there is nothing left to spend. The showcase hit this exact wall, and
+      its answer is the right one: the strip does not dim on selection at all; selection is carried
+      by a halo and by size, which cost no contrast.</p>
+    <p style="color:var(--chi)">One genuine miss, and it is the one on the list below:
+      <code class="h">unsettled #5A6066</code> at 2.97:1, which is 0.03 under the 3:1 floor.</p>
+  </div>
+</article>
+
+<!-- ══════════════════════════ G2 ══════════════════════════ -->
+<article class="plate" id="g2">
+  <div class="plate-head"><span class="no">G2</span><h3 class="pt">Where accent appears — counted, not claimed</h3></div>
+  <div class="chips"><span class="chip">D19 one use</span></div>
+  <p class="cap">D19 gives <code class="h">accent #B4553A</code> exactly one resting use in the
+    entire product: the emphasis mark on the falsifiable half of the claim. The moment it appears
+    twice on one screen it stops pointing at anything. This walks every element on the page and
+    counts what actually resolved to that value.</p>
+  <div id="accent-out"></div>
+  <div class="callout" style="margin-top:26px">
+    <p>The page chrome — headings, rails, chips, buttons, tables, this callout — uses no accent at
+      all. The only two places it appears outside a screen are the swatch in the token grid and the
+      swatch in G1's table, where the colour is the subject rather than the styling. That was a
+      constraint on building the page, not a coincidence, and it is what makes the count mean
+      something: if the surrounding document had spent the colour on a link or a highlight, the
+      table above would be measuring nothing.</p>
+    <p>One appearance cannot be counted from the DOM and is declared here instead: the innermost
+      contour of the hold-to-speak ring is drawn to a canvas and borrows accent for as long as the
+      thumb is down. That is the transient exception DESIGN.md records, and with it DESIGN.md closes
+      the enumeration in as many words — <em class="k">“That is the complete list.”</em></p>
+  </div>
+
+  <div class="callout open" style="margin-top:20px">
+    <h5>And one thing the table cannot see, which is not settled</h5>
+    <p>The commit flood on <a href="#a3" style="color:var(--chi)">A3</a> takes the whole window in
+      accent. The table above does not count it because it sits at <code class="h">scale(0)</code>
+      until you hold the ring and zero painted area is zero ink — but that is a measurement
+      convention, not permission. <strong>D19 says accent has one use. A full-window field is a
+      third use and the largest by three orders of magnitude, so it is a proposed amendment to D19,
+      not an application of it.</strong> It is drawn on A3 with the argument on both sides, and it
+      is in <a href="#h5" style="color:var(--chi)">H5</a> as open.</p>
+    <p>This is the failure mode this whole section exists to catch, and it caught me: I built the
+      thing, wrote it up as though the record permitted it, and had to be told. A census that its
+      author can quietly define his way out of is not a census.</p>
+  </div>
+</article>
+
+<!-- ══════════════════════════ G3 ══════════════════════════ -->
+<article class="plate" id="g3">
+  <div class="plate-head"><span class="no">G3</span><h3 class="pt">The variable-font trap</h3></div>
+  <div class="chips"><span class="chip">DESIGN.md · the sharpest edge in the port</span></div>
+  <p class="cap">Fraunces' <code class="h">fvar</code> default instance is
+    <code class="h">wght 900 / opsz 9</code> — Black, at caption optical size. Flutter instantiates
+    that default. Ask for a 30&nbsp;px claim without saying otherwise and you get this, with no
+    error, no log line and no missing-glyph box:</p>
+
+  <div class="pair" style="margin-top:8px">
+    <div>
+      <span class="lab" style="margin-bottom:12px">Unpinned — the fvar default</span>
+      <div class="dev" data-specimen style="padding:34px 30px;border-radius:8px;box-shadow:0 0 0 1px #1E2225">
+        <p class="claim" style="font-variation-settings:'wght' 900,'opsz' 9;max-width:19ch">I am
+          someone who trains when I don't feel like it.</p>
+        <p class="quiet" style="margin-top:16px;font-family:Inter">wght 900 · opsz 9 · 30px</p>
+      </div>
+    </div>
+    <div>
+      <span class="lab" style="margin-bottom:12px">Pinned, as every TextStyle must be</span>
+      <div class="dev" data-specimen style="padding:34px 30px;border-radius:8px;box-shadow:0 0 0 1px #1E2225">
+        <p class="claim" style="max-width:19ch">I am someone who trains when I don't feel like
+          it.</p>
+        <p class="quiet" style="margin-top:16px;font-family:Inter">wght 430 · opsz 30 · 30px</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout" style="margin-top:26px">
+    <p>CoreText did optical-size mapping for free on the SwiftUI build. Flutter does not, and
+      there is nothing to turn on. <em class="k">A style without <code class="h">fontVariations</code>
+      is a bug, not a default</em> — pin <code class="h">wght</code> and <code class="h">opsz</code>
+      on every single one, with <code class="h">opsz</code> set to the pixel size.</p>
+    <p class="dim">Both panels above are the same font file at the same 30&nbsp;px. The difference
+      is two numbers. This page pins every style the same way the Dart will have to.</p>
+  </div>
+</article>
+
+<!-- ══════════════════════════ G4 ══════════════════════════ -->
+<article class="plate" id="g4">
+  <div class="plate-head"><span class="no">G4</span><h3 class="pt">The type floor, before and after</h3></div>
+  <div class="chips"><span class="chip">D17</span></div>
+  <p class="cap">Left is what a normal design instinct produces. Right is the floor. Between a
+    fifth and a half again bigger depending on the row — and it broke three compositions in the
+    showcase, which had to be re-laid-out rather than re-sized.</p>
+
+  <div class="pair" style="margin-top:8px">
+    <div>
+      <span class="lab" style="margin-bottom:12px">Before — fails</span>
+      <div class="dev" data-specimen style="padding:30px 28px;border-radius:8px;box-shadow:0 0 0 1px #1E2225">
+        <p style="font-size:10px;letter-spacing:1.7px;text-transform:uppercase;color:var(--ink3);
+          font-variation-settings:'wght' 500,'opsz' 14">Tuesday · day 19</p>
+        <p style="font-size:14px;color:var(--ink2);margin:14px 0 0;line-height:1.5">legs were dead
+          honestly. went anyway, didn't want to. did the session, cut the last set.</p>
+        <p style="font-size:12.5px;color:var(--ink3);margin:12px 0 0">Tempo: push session, 52 min</p>
+        <div class="strip" style="margin-top:16px">
+          <div class="d" style="width:26px"><i class="m kept" style="width:8px;height:8px"></i>
+            <span class="dl" style="font-size:9px">W</span></div>
+          <div class="d" style="width:26px"><i class="m broken" style="width:8px;height:8px"></i>
+            <span class="dl" style="font-size:9px">T</span></div>
+          <div class="d" style="width:26px"><i class="m unsettled" style="width:8px;height:8px;
+            box-shadow:inset 0 0 0 1.4px #3C3F40"></i><span class="dl" style="font-size:9px">F</span></div>
+          <div class="d" style="width:26px"><i class="m kept" style="width:8px;height:8px"></i>
+            <span class="dl" style="font-size:9px">S</span></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <span class="lab" style="margin-bottom:12px">After — the floor</span>
+      <div class="dev" data-specimen style="padding:30px 28px;border-radius:8px;box-shadow:0 0 0 1px #1E2225">
+        <p class="eyebrow">Tuesday · day 19</p>
+        <p class="said" style="margin:14px 0 0">legs were dead honestly. went anyway, didn't want
+          to. did the session, cut the last set.</p>
+        <p class="quiet" style="margin:12px 0 0">Tempo: push session, 52 min</p>
+        <div class="strip" style="margin-top:16px">
+          <div class="d"><i class="m kept"></i><span class="dl">W</span></div>
+          <div class="d"><i class="m broken"></i><span class="dl">T</span></div>
+          <div class="d"><i class="m unsettled"></i><span class="dl">F</span></div>
+          <div class="d"><i class="m kept"></i><span class="dl">S</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <table class="t" style="margin-top:30px;max-width:640px">
+    <tr><th>Role</th><th>Before</th><th>Now</th><th>Change</th></tr>
+    <tr><td>prose / testimony / transcript</td><td>14</td><td style="color:var(--chi)">17</td><td>+21%</td></tr>
+    <tr><td>supporting prose</td><td>12.5</td><td style="color:var(--chi)">16</td><td>+28%</td></tr>
+    <tr><td>smallest readable text</td><td>9–11</td><td style="color:var(--chi)">15</td><td>+36–67%</td></tr>
+    <tr><td>uppercase tracked labels</td><td>10 · 1.7 tracking</td><td style="color:var(--chi)">14 · 2.2</td><td>+40%</td></tr>
+    <tr><td>record strip day letters</td><td>9</td><td style="color:var(--chi)">14</td><td>+56%</td></tr>
+  </table>
+  <p class="pro dim" style="margin-top:18px">The left panel also carries v1's
+    <code class="h">outline #3C3F40</code> on the unsettled ring, at 1.72:1. On a dark phone at
+    night it is invisible — and that was the mark for the state D7 calls the most diagnostic
+    signal in the product. The signal that the app was dying was rendered in a colour you could
+    not see.</p>
+</article>
+
+<!-- ══════════════════════════ G5 ══════════════════════════ -->
+<article class="plate" id="g5">
+  <div class="plate-head"><span class="no">G5</span><h3 class="pt">The four motions, isolated</h3></div>
+  <div class="chips"><span class="chip">D20</span></div>
+  <p class="cap">House curve is <code class="h">cubic-bezier(.16, 1, .3, 1)</code> — fast out of
+    the gate, long tail. Nothing in Force overshoots except the settle, which earns it. A panel
+    that bounces open teaches you that things in Force bounce, and then the one mark a night that
+    is supposed to land with weight lands like everything else does.</p>
+
+  <div class="stage">
+    <div class="devbox"><div class="dev" data-specimen style="width:720px;padding:36px 40px;border-radius:10px;
+         box-shadow:0 0 0 1px #1E2225" data-scene="motions">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:38px 44px">
+        <div>
+          <span class="eyebrow">1 · Ink Bloom — 1.15s</span>
+          <p class="claim sm" data-bloom style="margin-top:16px">I am someone who trains
+            <span class="emph" data-emph data-noemph>when I don't feel like it</span>.</p>
+          <p class="quiet" style="margin-top:14px">Whole sentence out of blur at once. No stagger:
+            the claim is one thought, and a reveal you have already seen nineteen times is a wait.</p>
+        </div>
+        <div>
+          <span class="eyebrow">2 · Italic + rule — 0.72s</span>
+          <p class="claim sm" style="margin-top:16px">I am someone who trains
+            <span class="emph" data-emph2>when I don't feel like it</span>.</p>
+          <p class="quiet" style="margin-top:14px">Begins 0.9s <em class="k"
+            style="color:var(--ink2)">after</em> the bloom settles. The gap is the point — the
+            sentence is read whole first, then the app puts its finger on the half that can break.</p>
+        </div>
+        <div>
+          <span class="eyebrow">3 · The layered ring</span>
+          <div style="margin-top:16px"><canvas class="ringc" width="150" height="150"
+            style="width:150px;height:150px" data-mode="live" data-auto="1"></canvas></div>
+          <p class="quiet" style="margin-top:14px">Three solid bodies, back to front. Depth from
+            overlap and occlusion, never a gradient.</p>
+        </div>
+        <div>
+          <span class="eyebrow">4 · Fling</span>
+          <div class="settle" data-settle style="height:150px;margin-top:16px">
+            <div class="tgt" data-tgt="kept" style="width:96px;height:96px"><span class="tw">Kept</span></div>
+            <div class="tgt" data-tgt="broken" style="width:96px;height:96px"><span class="tw">Broken</span></div>
+            <div class="mark" data-mark></div>
+          </div>
+          <p class="quiet" style="margin-top:14px">A spring, not a duration. It ends when it
+            stops.</p>
+        </div>
+      </div>
+    </div></div>
+
+    <aside class="notes">
+      <h5>Measured, with the caveats stated</h5>
+      <p>Over a 6.5-minute auto-drive of all six showcase scenes: 14,884 frames, zero exceptions,
+        zero layout overflows. 22 frames (0.15%) over the 120&nbsp;Hz budget, 3 frames (0.02%)
+        over 60&nbsp;Hz. Memory plateaued and then declined — 355.8&nbsp;MB peak, 262.8&nbsp;MB at
+        the end, flat to within 0.3&nbsp;MB over the final 90&nbsp;s.</p>
+      <p class="dim">Both caveats from the spike's own notes: the iOS Simulator vsyncs at
+        60&nbsp;Hz, so 120&nbsp;Hz headroom is an inference rather than a measurement; and these
+        are debug-mode numbers. Neither closes without a physical ProMotion device.</p>
+      <h5>What is faithful here and what isn't</h5>
+      <p>The bloom technique, the 0.9s gap, the ring's smoothing constants and the spring's shape
+        are the real ones. The ring's amplitude is synthesised because a web page has no
+        microphone, and the spring integrates in JavaScript rather than Dart.</p>
+      <button class="replay" data-replay="g5">Replay all four</button>
+    </aside>
+  </div>
+</article>

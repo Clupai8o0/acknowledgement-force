@@ -1,0 +1,894 @@
+</main>
+</div>
+
+<script>
+(() => {
+'use strict';
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ───────────────── colour maths — WCAG 2.1, sRGB ───────────────── */
+const parse = c => {
+  const m = /rgba?\(([^)]+)\)/.exec(c || '');
+  if (!m) return null;
+  const p = m[1].split(/[,\s/]+/).filter(Boolean).map(Number);
+  return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 };
+};
+const lin = v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); };
+const lum = c => .2126 * lin(c.r) + .7152 * lin(c.g) + .0722 * lin(c.b);
+const ratio = (a, b) => { const l1 = lum(a), l2 = lum(b);
+  return (Math.max(l1, l2) + .05) / (Math.min(l1, l2) + .05); };
+const hex2rgb = h => ({ r: parseInt(h.slice(1,3),16), g: parseInt(h.slice(3,5),16),
+  b: parseInt(h.slice(5,7),16), a: 1 });
+const over = (fg, bg) => ({ r: fg.r*fg.a + bg.r*(1-fg.a), g: fg.g*fg.a + bg.g*(1-fg.a),
+  b: fg.b*fg.a + bg.b*(1-fg.a), a: 1 });
+/* walk up until something opaque paints */
+const effBg = el => {
+  let n = el, stack = [];
+  while (n && n !== document.documentElement) {
+    const c = parse(getComputedStyle(n).backgroundColor);
+    if (c && c.a > 0) { stack.push(c); if (c.a >= .999) break; }
+    n = n.parentElement;
+  }
+  let out = { r: 8, g: 9, b: 10, a: 1 };
+  for (let i = stack.length - 1; i >= 0; i--) out = over(stack[i], out);
+  return out;
+};
+const fmt = n => n.toFixed(2) + ':1';
+
+/* ───────────────── token grid ───────────────── */
+const TOKENS = [
+  ['bg','#101112','the ground'], ['bg2','#191B1D','raised surface'],
+  ['ink','#EDEAE4','primary text'], ['ink2','#A8AEB3','secondary text'],
+  ['ink3','#7E858B','the quietest voice'], ['kept','#EDEAE4','a day you kept'],
+  ['broken','#8A7566','showed up and lost'], ['unsettled','#5A6066',"didn't show up"],
+  ['accent','#B4553A','the emphasis mark'], ['rule','#2B2F33','hairlines only'],
+];
+const BG = hex2rgb('#101112');
+const tg = document.getElementById('tokgrid');
+if (tg) tg.innerHTML = TOKENS.map(([n, h, role]) => {
+  const r = ratio(hex2rgb(h), BG);
+  const note = n === 'bg' ? 'the ground itself'
+    : n === 'bg2' ? fmt(r) + ' · a surface, never a mark'
+    : n === 'rule' ? fmt(r) + ' · hairlines only, never a mark'
+    : r >= 4.5 ? fmt(r) + ' · text ok'
+    : r >= 3 ? fmt(r) + ' · marks only, not text'
+    : fmt(r) + ' · under the 3:1 mark floor';
+  return `<div class="tok"><div class="bar" style="background:${h}"></div>
+    <div class="n">${n}</div><div class="hex">${h}</div>
+    <div class="r">${note}</div>
+    <div class="r" style="color:#565D63">${role}</div></div>`;
+}).join('');
+
+/* ───────────────── Ink Bloom + the emphasis rule ───────────────── */
+const BLOOM_MS = 1150, GAP_MS = 900;
+/* Reduce Motion suppresses motion that happens TO you. Pressing a button
+   labelled "play the entrance" is a request, not an ambush, so an explicit
+   call overrides it. */
+function runBloom(el, explicit) {
+  const rule = el.querySelector('[data-emph]');
+  clearTimeout(el._t);
+  el.classList.add('bloom');
+  if (rule) rule.classList.remove('drawn');
+  if (RM && !explicit) { if (rule) rule.classList.add('drawn'); return; }
+  el.classList.remove('playing');
+  void el.offsetWidth;               /* restart the animation from the top */
+  el.classList.add('playing');
+  if (rule && !rule.hasAttribute('data-noemph'))
+    el._t = setTimeout(() => rule.classList.add('drawn'), BLOOM_MS + GAP_MS);
+}
+function runRuleOnly(rule) {
+  rule.classList.remove('drawn');
+  if (RM) { rule.classList.add('drawn'); return; }
+  void rule.offsetWidth;
+  clearTimeout(rule._t);
+  rule._t = setTimeout(() => rule.classList.add('drawn'), GAP_MS);
+}
+
+/* ───────────────── the layered ring ─────────────────
+   Three closed contours drawn back to front, each a solid body of its own
+   colour. Depth is overlap and occlusion — the gradient was rejected (D20).
+   Smoothing is the showcase's: asymmetric attack/release, 26/s up, 8.5/s down. */
+const N = 168, HIST = 168;
+class Ring {
+  constructor(cv) {
+    this.cv = cv; this.ctx = cv.getContext('2d');
+    this.w = cv.width; this.h = cv.height;
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    cv.width = this.w * dpr; cv.height = this.h * dpr;
+    this.ctx.scale(dpr, dpr);
+    this.hist = new Float32Array(HIST); this.head = 0;
+    this.lvl = 0; this.tgt = 0; this.commit = 0;
+    this.auto = cv.hasAttribute('data-auto');
+    this.mode = cv.dataset.mode || 'live';
+    this.on = false; this.press = false; this.vis = false; this.t = 0; this.burst = 0;
+    this.ph = 0;
+    /* one accent per screen: while the line is alive the emphasis rule under
+       the claim stands down, and it comes back when you stop */
+    this.claimRule = cv.closest('.app')?.querySelector('.claim .emph');
+    const cs = getComputedStyle(document.documentElement);
+    this.C = {
+      broken: cs.getPropertyValue('--broken').trim(),
+      ink3:   cs.getPropertyValue('--ink3').trim(),
+      accent: cs.getPropertyValue('--accent').trim(),
+      ink:    cs.getPropertyValue('--ink').trim(),
+      rule:   cs.getPropertyValue('--rule').trim(),
+      bg:     cs.getPropertyValue('--bg').trim(),
+    };
+    const host = cv.closest('button') || cv;
+    const down = () => { this.press = true; }, up = () => { this.press = false; };
+    host.addEventListener('pointerdown', down);
+    addEventListener('pointerup', up);
+    host.addEventListener('pointerenter', () => this.hover = true);
+    host.addEventListener('pointerleave', () => this.hover = false);
+  }
+  /* speech-like envelope: bursts with pauses, never a decorative sine */
+  envelope(dt) {
+    this.t += dt;
+    if (this.t > this.burst) {
+      this.burst = this.t + .09 + Math.random() * .16;
+      this.peak = Math.random() < .18 ? .05 + Math.random() * .1
+                                      : .34 + Math.random() * .62;
+    }
+    return this.peak;
+  }
+  step(dt) {
+    const active = this.auto || this.press || this.hover;
+    if (this.mode === 'commit') {
+      /* ~5.5s to fill, ~2.4s to fall back. Asymmetric on purpose: committing
+         should cost real time, and backing out should not feel like a slap.
+         The accumulator is never reset on release, so two short holds add up
+         to one long one. */
+      this.commit += (this.press ? dt / 5.5 : -dt / 2.4);
+      this.commit = Math.max(0, Math.min(1, this.commit));
+      this.tgt = this.commit;
+    } else {
+      this.tgt = active ? this.envelope(dt) : 0;
+    }
+    /* asymmetric attack / release — most of why a meter reads as voice */
+    const rate = this.tgt > this.lvl ? 26 : 8.5;
+    this.lvl += (this.tgt - this.lvl) * Math.min(1, rate * dt);
+    this.head = (this.head + 1) % HIST;
+    this.hist[this.head] = this.lvl;
+    this.ph += dt * 7.5;
+    if (this.mode === 'line' && this.claimRule) {
+      if (this.lvl > .05) this.claimRule.classList.remove('drawn');
+      else if (this.lvl < .01 && this._wasLive) this.claimRule.classList.add('drawn');
+      this._wasLive = this.lvl > .05 || (this._wasLive && this.lvl >= .01);
+    }
+  }
+  contour(cx, cy, radius, amp, lag) {
+    const c = this.ctx;
+    c.beginPath();
+    for (let j = 0; j < N; j++) {
+      const a = -Math.PI / 2 + (j / N) * Math.PI * 2;
+      const s = this.hist[(this.head - lag - ((j * HIST / N) | 0) + HIST * 3) % HIST];
+      const r = radius + amp * s;
+      const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
+      j ? c.lineTo(x, y) : c.moveTo(x, y);
+    }
+    c.closePath();
+  }
+  draw() {
+    const c = this.ctx, w = this.w, h = this.h, cx = w / 2, cy = h / 2;
+    c.clearRect(0, 0, w, h);
+    const lvl = this.lvl;
+
+    /* ── the moving line ──
+       One continuous line. A carrier oscillation gives it the shape of a wave;
+       your voice is its amplitude, read out of the same rolling history the
+       ring used, so what you said half a second ago is still travelling along
+       it. Pinned at both ends, because a line that leaves the frame is a
+       waveform and a line that arrives and departs is a signature. */
+    if (this.mode === 'line') {
+      const mid = h / 2, n = Math.max(160, (w / 2) | 0);
+      const wake = Math.min(1, lvl / .06);
+      c.beginPath(); c.moveTo(0, mid); c.lineTo(w, mid);
+      c.strokeStyle = this.C.rule; c.lineWidth = 1;
+      c.globalAlpha = 1 - wake * .75; c.stroke();
+      if (lvl > .004) {
+        c.beginPath();
+        for (let i = 0; i < n; i++) {
+          const t = i / (n - 1), x = t * w;
+          const s = this.hist[(this.head - ((t * 132) | 0) + HIST * 3) % HIST];
+          const env = Math.sin(Math.PI * t);
+          const carrier = Math.sin(t * Math.PI * 28 - this.ph) * .72
+                        + Math.sin(t * Math.PI * 46 - this.ph * 1.7) * .28;
+          const y = mid + carrier * s * env * (h * .40);
+          i ? c.lineTo(x, y) : c.moveTo(x, y);
+        }
+        c.strokeStyle = this.C.accent; c.lineWidth = 2; c.lineJoin = 'round';
+        c.globalAlpha = .30 + .70 * wake; c.stroke();
+      }
+      c.globalAlpha = 1;
+      return;
+    }
+
+    const base = Math.min(w, h) * .255;
+    /* back to front: broken · ink3 · accent. the front body hides part of the
+       one behind it, and that hiding is what reads as layers. */
+    /* Radius separation is what makes these read as three bodies rather than
+       one disc: the phase lags alone are not enough when the envelope is
+       smooth. Fills stay low — the contour lines carry the layering, and the
+       front body still occludes the two behind it where amplitude pushes them. */
+    /* Three solid bodies, each its own token: broken behind, ink3 in the
+       middle, accent in front (D20). The front body knocks itself out against
+       the ground first, so it genuinely occludes the two behind it instead of
+       compositing with them — that knockout is the whole difference between
+       three bodies and one brown disc. What you see peeking out are crescents.
+       Depth from overlap, never a gradient, which bands on OLED here.
+       Every colour comes from the palette; there is no eleventh hex. */
+    const layers = [
+      { line: this.C.broken, fill: this.C.broken, lw: 1.2, fa: .30, la: .58, dr: 30, lag: 52, amp: 13, knock: 0 },
+      { line: this.C.ink,    fill: this.C.ink3,   lw: 1.3, fa: .34, la: .70, dr: 15, lag: 26, amp: 19, knock: 0 },
+      { line: this.C.accent, fill: this.C.accent, lw: 2.0, fa: .17, la: 1.0, dr: 0,  lag: 0,  amp: 25, knock: .94 },
+    ];
+    const k = base / 53;
+    /* A hold is not speech. Driving the contours from the amplitude history
+       during a commit spirals the ramp around the circle and reads as a
+       glitch — so commit mode gets a plain circle and an arc, nothing else. */
+    if (this.mode === 'commit') {
+      c.beginPath(); c.arc(cx, cy, base + 10, 0, Math.PI * 2);
+      c.strokeStyle = this.C.rule; c.lineWidth = 1.2; c.stroke();
+      if (this.commit > 0) {
+        c.globalAlpha = .10 * this.commit;
+        c.beginPath(); c.arc(cx, cy, base + 10, 0, Math.PI * 2);
+        c.fillStyle = this.C.accent; c.fill(); c.globalAlpha = 1;
+        c.beginPath();
+        c.arc(cx, cy, base + 10, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * this.commit);
+        c.strokeStyle = this.C.accent; c.lineWidth = 2.2; c.lineCap = 'round'; c.stroke();
+        c.lineCap = 'butt';
+      }
+      return;
+    }
+    /* at rest the three bodies are gone entirely — the ring is one hairline
+       circle, so an idle gate carries no chroma at all */
+    const wake = Math.min(1, lvl / .10);
+    if (lvl > .002) for (const L of layers) {
+      this.contour(cx, cy, base + L.dr * k, L.amp * k * lvl, L.lag);
+      if (L.knock) {                       /* clear the ground first, then tint */
+        c.globalAlpha = L.knock * wake; c.fillStyle = this.C.bg; c.fill();
+      }
+      c.globalAlpha = L.fa * wake; c.fillStyle = L.fill; c.fill();
+      c.globalAlpha = L.la * wake * (.22 + .78 * lvl); c.strokeStyle = L.line;
+      c.lineWidth = L.lw; c.stroke();
+    }
+    c.globalAlpha = 1 - wake;
+    if (c.globalAlpha > .002) {
+      c.beginPath(); c.arc(cx, cy, base, 0, Math.PI * 2);
+      c.strokeStyle = this.C.rule; c.lineWidth = 1.2; c.stroke();
+    }
+    c.globalAlpha = 1;
+  }
+}
+const rings = [...document.querySelectorAll('.ringc')].map(cv => new Ring(cv));
+
+/* ───────────────── four other instruments, one engine ─────────────────
+   Each of these reuses Ring's envelope and its asymmetric smoothing; only the
+   drawing differs. That is the point of the comparison — if one of them reads
+   better it is the instrument, not the signal. */
+class Alt extends Ring {
+  constructor(cv) {
+    super(cv);
+    this.kind = cv.dataset.altKind;
+    this.trail = new Float32Array(120); this.tp = 0; this.acc = 0;
+    this.fill = 0;
+  }
+  /* state advances on the clock, not on paint — a skipped frame should cost a
+     frame of animation, not a frame of history */
+  step(dt) {
+    super.step(dt);
+    if (this.kind === 'column') {
+      this.acc += dt;
+      while (this.acc >= .055) { this.acc -= .055;
+        this.tp = (this.tp + 1) % this.trail.length; this.trail[this.tp] = this.lvl; }
+    } else if (this.kind === 'well') {
+      /* ~28s of talking to fill it — a real evening beat is 60–90s, so this is
+         the flattering version and it still pegs before you have finished */
+      this.fill = Math.max(0, Math.min(1,
+        this.fill + (this.lvl > .06 ? dt * .036 : -dt * .012)));
+    }
+  }
+  draw() {
+    const c = this.ctx, w = this.w, h = this.h, lvl = this.lvl;
+    c.clearRect(0, 0, w, h);
+    const wake = Math.min(1, lvl / .08);
+
+    if (this.kind === 'rule') {
+      /* the accent rule under the claim, displaced by the voice: a line being
+         drawn under your own words at the speed you say them */
+      const mid = h * .5, n = 150;
+      c.beginPath();
+      for (let i = 0; i < n; i++) {
+        const t = i / (n - 1), x = t * w;
+        const s = this.hist[(this.head - ((t * 110) | 0) + HIST * 3) % HIST];
+        const env = Math.sin(Math.PI * t);              /* pinned at both ends */
+        const y = mid - s * env * (h * .40);
+        i ? c.lineTo(x, y) : c.moveTo(x, y);
+      }
+      c.strokeStyle = this.C.accent; c.lineWidth = 2;
+      c.globalAlpha = .35 + .65 * wake; c.stroke();
+      c.globalAlpha = 1;
+      c.beginPath(); c.moveTo(0, mid); c.lineTo(w, mid);
+      c.strokeStyle = this.C.rule; c.lineWidth = 1; c.stroke();
+      return;
+    }
+
+    if (this.kind === 'column') {
+      /* one bar per 55ms of speech, scrolling up: the shape of the whole
+         answer, pauses included */
+      const rows = 30, rh = h / rows;
+      for (let r = 0; r < rows; r++) {
+        const v = this.trail[(this.tp - r + this.trail.length * 2) % this.trail.length];
+        const age = 1 - r / rows;
+        const bw = Math.max(2, v * w * .82);
+        c.globalAlpha = (.10 + .78 * v) * (.25 + .75 * age);
+        c.fillStyle = v > .55 ? this.C.ink : v > .18 ? this.C.ink3 : this.C.broken;
+        c.fillRect((w - bw) / 2, h - (r + 1) * rh + rh * .22, bw, rh * .56);
+      }
+      c.globalAlpha = 1;
+      return;
+    }
+
+    if (this.kind === 'well') {
+      /* the ground rises with time spoken; the surface moves with the voice */
+      const base = h - this.fill * (h - 14);
+      c.beginPath(); c.moveTo(0, h);
+      for (let x = 0; x <= w; x += 4) {
+        const t = x / w;
+        const s = this.hist[(this.head - ((t * 90) | 0) + HIST * 3) % HIST];
+        c.lineTo(x, base - s * 16 * wake);
+      }
+      c.lineTo(w, h); c.closePath();
+      c.globalAlpha = .16; c.fillStyle = this.C.broken; c.fill();
+      c.globalAlpha = .9; c.strokeStyle = this.C.ink3; c.lineWidth = 1.4; c.stroke();
+      c.globalAlpha = 1;
+      return;
+    }
+  }
+}
+const alts = [...document.querySelectorAll('.altc')].map(cv => new Alt(cv));
+rings.push(...alts);
+
+/* the breath: the claim's own variable-font axes are the meter */
+const breaths = [...document.querySelectorAll('[data-breath]')].map(el => {
+  const host = el.closest('[data-alt]') || el;
+  const r = { el, lvl: 0, tgt: 0, t: 0, burst: 0, peak: 0, hover: false };
+  host.addEventListener('pointerenter', () => r.hover = true);
+  host.addEventListener('pointerleave', () => r.hover = false);
+  return r;
+});
+
+/* ───────────────── the settle — a spring, not a duration ─────────────────
+   Constants live in spikes/flutter-showcase/lib/scenes/settle_scene.dart and
+   that file is the source of truth (D20). What is decided is the shape:
+   underdamped, one small overshoot, then still. */
+const K = 205, C = 21, M = 1;
+class Spring {
+  constructor(x) { this.x = x; this.v = 0; this.t = x; }
+  retarget(t, v) { this.t = t; if (v !== undefined) this.v = v; }
+  step(dt) {
+    /* sub-step so a dropped frame can't blow the integrator up */
+    const n = Math.max(1, Math.ceil(dt / .004));
+    const h = dt / n;
+    for (let i = 0; i < n; i++) {
+      const a = (-K * (this.x - this.t) - C * this.v) / M;
+      this.v += a * h; this.x += this.v * h;
+    }
+    return Math.abs(this.x - this.t) < .4 && Math.abs(this.v) < 6;
+  }
+}
+class Settle {
+  constructor(root) {
+    this.root = root;
+    this.mark = root.querySelector('[data-mark]');
+    this.hint = root.querySelector('[data-hint]');
+    this.tgts = [...root.querySelectorAll('.tgt')];
+    this.strip = root.closest('.app')?.querySelector('[data-slot]');
+    this.sx = new Spring(0); this.sy = new Spring(0);
+    this.drag = false; this.done = false; this.choice = null;
+    this.reset();
+    this.mark.addEventListener('pointerdown', e => this.grab(e));
+    addEventListener('pointermove', e => this.move(e));
+    addEventListener('pointerup', e => this.release(e));
+    this.tgts.forEach(t => t.addEventListener('click', () => {
+      if (this.done) return;
+      this.choice = t.dataset.tgt; this.aim(0); this.commitAt = performance.now() + 620;
+    }));
+  }
+  centre(el) {
+    const a = this.root.getBoundingClientRect(), b = el.getBoundingClientRect();
+    return { x: b.left - a.left + b.width / 2, y: b.top - a.top + b.height / 2 };
+  }
+  reset() {
+    const r = this.root.getBoundingClientRect();
+    this.home = { x: r.width / 2, y: r.height / 2 };
+    this.sx = new Spring(this.home.x); this.sy = new Spring(this.home.y);
+    this.done = false; this.choice = null; this.commitAt = 0;
+    this.mark.classList.remove('committed', 'is-broken');
+    this.tgts.forEach(t => t.classList.remove('hot'));
+    if (this.hint) { this.hint.textContent = 'drag it, or throw it'; this.hint.style.opacity = 1; }
+    if (this.strip) { this.strip.className = 'm none'; }
+    this.place();
+  }
+  place() {
+    const m = this.mark.offsetWidth / 2 || 15;
+    this.mark.style.left = (this.sx.x - m) + 'px';
+    this.mark.style.top  = (this.sy.x - m) + 'px';
+  }
+  grab(e) {
+    if (this.done) return;
+    e.preventDefault();
+    this.drag = true; this.commitAt = 0;
+    this.lx = e.clientX; this.ly = e.clientY; this.vx = 0; this.vy = 0;
+    this.lt = performance.now();
+    this.mark.setPointerCapture?.(e.pointerId);
+    if (this.hint) this.hint.style.opacity = .35;
+  }
+  move(e) {
+    if (!this.drag) return;
+    const now = performance.now(), dt = Math.max(1, now - this.lt) / 1000;
+    this.vx = (e.clientX - this.lx) / dt; this.vy = (e.clientY - this.ly) / dt;
+    this.lx = e.clientX; this.ly = e.clientY; this.lt = now;
+    this.sx.x += this.vx * dt; this.sy.x += this.vy * dt;
+    const r = this.root.getBoundingClientRect();
+    this.sx.x = Math.max(16, Math.min(r.width - 16, this.sx.x));
+    this.sy.x = Math.max(16, Math.min(r.height - 16, this.sy.x));
+    this.hotUpdate();
+    this.place();
+  }
+  hotUpdate() {
+    let best = null, bd = 1e9;
+    for (const t of this.tgts) {
+      const c = this.centre(t), d = Math.hypot(c.x - this.sx.x, c.y - this.sy.x);
+      if (d < bd) { bd = d; best = t; }
+    }
+    this.tgts.forEach(t => t.classList.toggle('hot', t === best && bd < 190));
+    this.near = bd < 190 ? best : null;
+    this.mark.classList.toggle('is-broken', this.near?.dataset.tgt === 'broken');
+  }
+  release() {
+    if (!this.drag) return;
+    this.drag = false;
+    this.hotUpdate();
+    if (!this.near) { this.choice = null; this.aim(0, this.vx, this.vy); return; }
+    this.choice = this.near.dataset.tgt;
+    /* the fling velocity goes straight into the spring: a hard throw
+       overshoots and a gentle one does not */
+    this.aim(0, this.vx, this.vy);
+    this.commitAt = performance.now() + 620;
+    if (this.hint) this.hint.textContent = 'change your mind — it redirects, it doesn\'t restart';
+  }
+  aim(_, vx, vy) {
+    const c = this.choice
+      ? this.centre(this.tgts.find(t => t.dataset.tgt === this.choice))
+      : this.home;
+    this.sx.retarget(c.x, vx); this.sy.retarget(c.y, vy);
+    this.mark.classList.toggle('is-broken', this.choice === 'broken');
+    this.tgts.forEach(t => t.classList.toggle('hot', t.dataset.tgt === this.choice));
+  }
+  step(dt) {
+    if (this.drag) return;
+    const a = this.sx.step(dt), b = this.sy.step(dt);
+    this.place();
+    if (this.commitAt && performance.now() > this.commitAt && a && b && !this.done) {
+      this.done = true;
+      this.mark.classList.add('committed');
+      if (this.strip) this.strip.className = 'm ' + this.choice;
+      if (this.hint) {
+        this.hint.textContent = this.choice === 'kept'
+          ? 'settled. the panel goes, and the app says nothing.'
+          : 'settled broken, spoken. worth more than a kept day you did not say.';
+        this.hint.style.opacity = 1;
+      }
+    }
+  }
+}
+const settles = [...document.querySelectorAll('[data-settle]')].map(r => new Settle(r));
+addEventListener('resize', () => settles.forEach(s => { if (!s.done) s.reset(); }));
+
+/* ───────────────── one clock, only for what is on screen ───────────────── */
+const live = new Set();
+const io = new IntersectionObserver(es => es.forEach(e => {
+  const o = e.target._obj;
+  if (o) e.isIntersecting ? live.add(o) : live.delete(o);
+}), { rootMargin: '120px' });
+rings.forEach(r => { r.cv._obj = r; io.observe(r.cv); });
+settles.forEach(s => { s.root._obj = s; io.observe(s.root); });
+
+/* handle for poking at the motion from a console — the springs and rings are
+   the interesting part of this page and there is no reason to hide them */
+window.force = { rings, settles, runBloom, contrastTable, accentCensus,
+  pump(sec = 2, dt = 1 / 60) { const n = Math.round(sec / dt);
+    for (let i = 0; i < n; i++) { settles.forEach(s => s.step(dt));
+      rings.forEach(r => { r.step(dt); r.draw(); }); } } };
+
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  for (const o of live) {
+    if (o instanceof Ring) { o.step(dt); o.draw(); }
+    else o.step(dt);
+  }
+  /* the breath runs off the same envelope, written into font axes instead of pixels */
+  for (const b of breaths) {
+    b.t += dt;
+    if (b.t > b.burst) { b.burst = b.t + .09 + Math.random() * .16;
+      b.peak = Math.random() < .18 ? .05 + Math.random() * .1 : .34 + Math.random() * .62; }
+    b.tgt = b.hover ? b.peak : 0;
+    const rate = b.tgt > b.lvl ? 26 : 8.5;
+    b.lvl += (b.tgt - b.lvl) * Math.min(1, rate * dt);
+    const wght = 300 + b.lvl * 240;          /* 300 → 540 */
+    const opsz = 26 + b.lvl * 34;            /* 26 → 60, the optical-size axis */
+    b.el.style.fontVariationSettings = `'wght' ${wght.toFixed(0)}, 'opsz' ${opsz.toFixed(0)}`;
+    b.el.style.color = b.lvl > .02 ? 'var(--ink)' : 'var(--ink2)';
+  }
+  requestAnimationFrame(frame);
+}
+if (!RM) requestAnimationFrame(frame);
+else rings.forEach(r => r.draw());
+
+/* ───────────────── play each entrance when it arrives ───────────────── */
+/* ── when an entrance plays ──
+   Not on scroll-ENTER. A 1.15s animation triggered as the sentence crosses
+   into view is over before you have finished scrolling to it, which is
+   indistinguishable from it never having happened — and that is exactly how it
+   was reported. It plays when the page STOPS moving and the sentence is in the
+   comfortable middle band. Driven by a plain scroll listener plus a timer, not
+   by IntersectionObserver: IO delivers in the rendering steps, so a throttled
+   or backgrounded tab can swallow the callback entirely. */
+const entrances = [...document.querySelectorAll('[data-bloom],[data-emph2]')];
+entrances.forEach(el => { if (el.hasAttribute('data-bloom')) el.classList.add('bloom'); });
+
+const inBand = el => {
+  const r = el.getBoundingClientRect();
+  if (!r.height) return false;
+  const top = innerHeight * .16, bot = innerHeight * .78;
+  const mid = r.top + r.height / 2;
+  return mid > top && mid < bot;
+};
+function sweepEntrances() {
+  for (const el of entrances) {
+    const here = inBand(el);
+    if (!here) { el._armed = true; continue; }
+    if (el._armed === false) continue;
+    el._armed = false;
+    if (el.hasAttribute('data-bloom')) runBloom(el); else runRuleOnly(el);
+  }
+}
+let idleTimer = null;
+const scheduleSweep = () => { clearTimeout(idleTimer); idleTimer = setTimeout(sweepEntrances, 140); };
+addEventListener('scroll', scheduleSweep, { passive: true });
+addEventListener('resize', scheduleSweep);
+setTimeout(sweepEntrances, 420);      /* whatever is on screen at load */
+setInterval(sweepEntrances, 1200);    /* backstop: no scroll event, still plays */
+
+/* ───────────────── picking a candidate ─────────────────
+   One rule exists. Picking moves it: it retracts right-to-left off the old
+   sentence and draws left-to-right under the new one, so the scarcity rule is
+   something you watch rather than something you are told. */
+document.querySelectorAll('[data-cands]').forEach(group => {
+  const rows = [...group.querySelectorAll('[data-cand]')];
+  rows.forEach(row => row.addEventListener('click', () => {
+    if (row.classList.contains('on')) return;
+    rows.forEach(r => {
+      r.classList.toggle('on', r === row);
+      r.querySelector('.emph')?.classList.toggle('drawn', r === row);
+    });
+    accentCensus();                  /* the count in G2 re-runs on every pick */
+  }));
+});
+
+/* ───────────────── the commit flood ─────────────────
+   The circle grows out of the ring's own centre, sized so that scale(1) just
+   reaches the furthest corner of the window. Progress is the hold itself, so
+   letting go shrinks it back and backing out is as visible as going through. */
+const floods = [];
+document.querySelectorAll('[data-commit]').forEach(btn => {
+  const body = btn.closest('.win-body');
+  const flood = body?.querySelector('[data-flood]');
+  const msg = body?.querySelector('[data-floodmsg]');
+  const word = body?.querySelector('[data-floodword]');
+  const cap = btn.querySelector('.cap');
+  const ring = rings.find(r => btn.contains(r.cv));
+  if (!flood || !ring) return;
+
+  const inv = body?.querySelector('[data-inv]');
+  const src = body?.querySelector('[data-claimsrc]');
+  const copy = body?.querySelector('[data-claimcopy]');
+  const slot = body?.querySelector('[data-invslot]');
+  let CX = 0, CY = 0, RAD = 0;
+  const place = () => {
+    /* the inverted copy has to be pixel-identical, so its stand-in for the
+       hold button takes the button's measured height rather than a guess —
+       otherwise the sentence sits at a different height once the colour
+       arrives, which is exactly what it looked like */
+    if (slot) slot.style.height = btn.offsetHeight + 'px';
+    const b = body.getBoundingClientRect(), c = btn.querySelector('canvas').getBoundingClientRect();
+    CX = c.left - b.left + c.width / 2; CY = c.top - b.top + c.height / 2;
+    RAD = Math.ceil(Math.max(
+      Math.hypot(CX, CY), Math.hypot(b.width - CX, CY),
+      Math.hypot(CX, b.height - CY), Math.hypot(b.width - CX, b.height - CY))) + 8;
+    Object.assign(flood.style, { width: RAD * 2 + 'px', height: RAD * 2 + 'px',
+      left: (CX - RAD) + 'px', top: (CY - RAD) + 'px' });
+  };
+  /* edit the real sentence and the inverted copy follows it */
+  src?.addEventListener('input', () => { if (copy) copy.innerHTML = src.innerHTML; });
+  /* re-measure on every press: the first measurement happens before webfonts
+     land, and the ring moves when the claim reflows */
+  place();
+  addEventListener('resize', place);
+  /* the emphasis rule retracts as the hold begins, so the accent field and the
+     accent mark are never on screen at the same time */
+  const claimEmph = body?.querySelector('.claim [data-emph]');
+  btn.addEventListener('pointerdown', () => { place(); claimEmph?.classList.remove('drawn'); });
+  (document.fonts?.ready || Promise.resolve()).then(place);
+
+  const clipTo = p => {
+    if (!inv) return;
+    const r = RAD * p;
+    inv.style.clipPath = inv.style.webkitClipPath = `circle(${r}px at ${CX}px ${CY}px)`;
+  };
+  clipTo(0);
+
+  const api = { done: false, plate: btn.closest('.plate'), reset() {
+    this.done = false; ring.commit = 0; ring.press = false;
+    flood.classList.remove('done'); flood.style.transform = 'scale(0)';
+    inv?.classList.remove('gone'); clipTo(0);
+    msg?.classList.remove('in'); cap.textContent = 'Hold to commit';
+    btn.classList.remove('busy'); btn.style.visibility = '';
+    body.querySelector('.claim [data-emph]')?.classList.add('drawn');
+    if (word) { word.classList.add('bloom'); word.classList.remove('settled'); }
+  } };
+  floods.push(api);
+
+  const check = () => {
+    const p = ring.commit;
+    if (!api.done) {
+      flood.style.transform = `scale(${p})`;
+      clipTo(p);
+      cap.textContent = p > .01 ? 'Committing' : 'Hold to commit';
+    }
+    if (!api.done && p >= .999) {
+      api.done = true;
+      flood.style.transform = 'scale(1)'; clipTo(1);
+      btn.style.visibility = 'hidden';
+      /* hold the colour and the inverted sentence for a beat, then let the
+         ground come back and the word arrive on it */
+      setTimeout(() => {
+        flood.classList.add('done');
+        inv?.classList.add('gone');
+        msg?.classList.add('in');
+        if (word) runBloom(word);
+      }, RM ? 0 : 420);
+    }
+    requestAnimationFrame(check);
+  };
+  requestAnimationFrame(check);
+  /* setTimeout backstop so a starved rAF still lands the state change */
+  setInterval(() => { if (!api.done && ring.commit >= .999) check(); }, 250);
+});
+
+/* click any claim to watch it arrive again */
+document.querySelectorAll('[data-replayable]').forEach(el => {
+  el.addEventListener('click', e => {
+    if (el.isContentEditable && el.matches(':focus')) return;  /* let them type */
+    runBloom(el);
+  });
+});
+
+/* replay everything inside one plate: entrances, emphasis, settle, commit */
+function replayPlate(p) {
+  if (!p) return;
+  floods.forEach(f => { if (f.plate === p) f.reset(); });
+  p.querySelectorAll('[data-bloom]').forEach(el => runBloom(el, true));
+  p.querySelectorAll('[data-emph2]').forEach(runRuleOnly);
+  settles.forEach(s => { if (p.contains(s.root)) s.reset(); });
+}
+
+/* If the OS is suppressing motion, say so where it will be read. Otherwise the
+   page looks broken and the reason is three menus deep in System Settings. */
+if (RM) {
+  const bar = document.createElement('div');
+  bar.style.cssText = 'position:sticky;top:0;z-index:80;background:#2A1F19;' +
+    'border-bottom:1px solid #4A3A2E;color:#D8C3B4;padding:11px 18px;font-size:16px';
+  bar.innerHTML = 'Your system has <strong>Reduce Motion</strong> switched on, so entrances, ' +
+    'the ring and the settle are all suppressed on arrival. The <strong>Play the entrance</strong> ' +
+    'button under each screen overrides it.';
+  document.body.prepend(bar);
+}
+document.querySelectorAll('[data-replay]').forEach(b =>
+  b.addEventListener('click', () => replayPlate(b.closest('.plate'))));
+
+/* ───────────────── a replay control under every screen that moves ─────────────
+   Against the thing it replays, not in the margin. Only added where there is
+   actually motion to replay, so it never promises something that won't happen. */
+const HINTS = {
+  a3: 'then hold the ring for 5 seconds — the colour takes the screen',
+  b4: 'then drag the mark, or throw it',
+  g5: 'all four, together',
+  b2: 'the sentence resolves out of blur — 1.15s, no stagger',
+};
+document.querySelectorAll('.plate[id] .devbox').forEach(box => {
+  const plate = box.closest('.plate');
+  const bloomy = plate.querySelector('[data-bloom],[data-emph2]');
+  const moves = bloomy || plate.querySelector('[data-settle],[data-flood]');
+  if (!moves || box.parentElement.querySelector(':scope > .devfoot')) return;
+  const foot = document.createElement('div');
+  foot.className = 'devfoot';
+  const b = document.createElement('button');
+  b.className = 'replayer';
+  b.innerHTML = '<span class="g" aria-hidden="true">&#8635;</span> ' +
+    (bloomy ? 'Play the entrance' : 'Replay');
+  b.addEventListener('click', () => replayPlate(plate));
+  foot.appendChild(b);
+  if (HINTS[plate.id]) {
+    const h = document.createElement('span');
+    h.className = 'hint'; h.textContent = HINTS[plate.id];
+    foot.appendChild(h);
+  }
+  box.after(foot);
+});
+document.querySelectorAll('.notes .replay').forEach(b => b.remove());
+
+/* ───────────────── G1 · contrast, sampled off the real screens ───────────────── */
+const SAMPLES = [
+  ['the claim', '#b2 .claim', 'text'],
+  ['testimony', '#b4 .said', 'text'],
+  ['what the app says', '#c3 .body', 'text'],
+  ['supporting prose', '#e1 .supp', 'text'],
+  ['quietest voice', '#b2 .quiet', 'text'],
+  ['tracked label', '#b2 .eyebrow', 'text'],
+  ['record strip day letter', '#b2 .strip .dl', 'text'],
+  ['ink3 on a raised surface', '#e1 [style*="bg2"] .quiet', 'text'],
+  ['page prose', '#h5 .cap', 'text'],
+  ['page label', '.mast .lab', 'text'],
+];
+const MARKS = [
+  ['kept mark', '#EDEAE4', 'mark'], ['broken mark', '#8A7566', 'mark'],
+  ['unsettled ring', '#5A6066', 'mark'], ['emphasis rule', '#B4553A', 'mark'],
+  ['hairline', '#2B2F33', 'hairline'],
+];
+function contrastTable() {
+  const rows = [];
+  for (const [label, sel, kind] of SAMPLES) {
+    const el = document.querySelector(sel);
+    if (!el) continue;
+    const cs = getComputedStyle(el);
+    let fg = parse(cs.color); if (!fg) continue;
+    const bg = effBg(el);
+    if (fg.a < 1) fg = over(fg, bg);
+    const px = parseFloat(cs.fontSize);
+    const r = ratio(fg, bg);
+    const need = 4.5;
+    rows.push({ label, px: px.toFixed(0), r, need, ok: r >= need, kind,
+      hex: '#' + [fg.r, fg.g, fg.b].map(v => Math.round(v).toString(16).padStart(2, '0')).join('').toUpperCase() });
+  }
+  for (const [label, hex, kind] of MARKS) {
+    const r = ratio(hex2rgb(hex), BG);
+    const need = kind === 'hairline' ? 0 : 3;
+    rows.push({ label, px: '—', r, need, ok: r >= need, kind, hex });
+  }
+  const out = document.getElementById('contrast-out');
+  out.innerHTML = `<table class="t"><tr><th>Sampled</th><th>Colour</th><th>Size</th>
+    <th>Measured</th><th>Needs</th><th>Verdict</th></tr>` + rows.map(x => {
+      const v = x.need === 0 ? 'n/a — never text'
+        : x.ok ? 'passes' : (x.kind === 'mark' ? 'under the mark floor' : 'FAILS');
+      const cls = x.need === 0 ? '' : x.ok ? 'ok' : 'no';
+      return `<tr><td>${x.label}</td><td><i class="sw" style="background:${x.hex}"></i>
+        <code class="h">${x.hex}</code></td><td>${x.px === '—' ? '—' : x.px + 'px'}</td>
+        <td>${fmt(x.r)}</td><td>${x.need ? x.need.toFixed(1) + ':1' : '—'}</td>
+        <td class="${cls}">${v}</td></tr>`;
+    }).join('') + '</table>';
+  const bad = rows.filter(x => x.need && !x.ok);
+  out.insertAdjacentHTML('beforeend',
+    `<p class="pro" style="margin-top:16px;font-size:15px;color:${bad.length > 3 ? '#B5837A' : '#8FA88F'}">
+     ${rows.length} samples · ${rows.filter(x => x.need && x.ok).length} pass ·
+     ${bad.length} below their floor (${bad.map(b => b.label).join(', ') || 'none'}).</p>`);
+}
+
+/* ───────────────── G2 · count every accent pixel the DOM can account for ───────────────── */
+function accentCensus() {
+  const A = 'rgb(180, 85, 58)';
+  const props = ['color', 'backgroundColor', 'borderTopColor', 'borderRightColor',
+                 'borderBottomColor', 'borderLeftColor', 'outlineColor'];
+  const hits = new Map();
+  for (const el of document.querySelectorAll('*')) {
+    /* Zero painted area is zero ink. The commit flood declares accent while it
+       sits at scale(0), waiting for a thumb — counting that is the same error
+       as counting an unpicked candidate's rule. */
+    const box = el.getBoundingClientRect();
+    if (box.width < .5 || box.height < .5) continue;
+    const cs = getComputedStyle(el);
+    let where = [];
+    for (const p of props) if (cs[p] === A) where.push(p);
+    /* An unpicked candidate declares the rule but never paints it. Counting
+       the declaration is how a screen offering three sentences reads as three
+       pointers. Keyed on selection, not on whether the entrance has played —
+       otherwise the number changes as you scroll, which is worse than wrong. */
+    const after = getComputedStyle(el, '::after');
+    if (after.backgroundColor === A && !el.closest('.cand:not(.on)'))
+      where.push('::after rule');
+    if (!where.length) continue;
+    const dev = el.closest('.dev');
+    /* a swatch is the colour being shown, not the colour being used */
+    const swatch = el.classList.contains('bar') || el.classList.contains('sw');
+    const key = swatch ? 'SWATCH' : !dev ? 'CHROME'
+      : dev.hasAttribute('data-specimen') ? 'SPECIMEN' : dev;
+    if (!hits.has(key)) hits.set(key, []);
+    hits.get(key).push(where.join(' + '));
+  }
+  const chrome = hits.get('CHROME') || [], spec = hits.get('SPECIMEN') || [],
+        swat = hits.get('SWATCH') || [];
+  /* one row per screen, in page order, so "more than one per screen" is visible */
+  const screens = [...document.querySelectorAll('.dev:not([data-specimen])')]
+    .map(d => ({ d, n: (hits.get(d) || []).length, what: [...new Set(hits.get(d) || [])] }))
+    .filter(s => s.n > 0);
+  const worst = Math.max(0, ...screens.map(s => s.n));
+  const total = screens.reduce((n, s) => n + s.n, 0);
+  const label = d => {
+    const p = d.closest('.plate');
+    const sibs = p ? [...p.querySelectorAll('.dev:not([data-specimen])')] : [];
+    const i = sibs.indexOf(d);
+    return (p ? '#' + p.id : 'screen') + (sibs.length > 1 ? ` · frame ${i + 1}` : '');
+  };
+  document.getElementById('accent-out').innerHTML =
+    `<table class="t" style="max-width:660px"><tr><th>Product screen</th>
+       <th>Uses of #B4553A</th><th>What it is</th></tr>` +
+    screens.map(s => `<tr><td><a href="#${s.d.closest('.plate')?.id || ''}"
+      style="color:var(--chi)">${label(s.d)}</a></td>
+      <td class="num ${s.n > 1 ? 'no' : 'ok'}">${s.n}</td>
+      <td>${s.what.join(', ')}</td></tr>`).join('') +
+    `<tr><td style="color:var(--chi)">page chrome — every pixel outside a screen</td>
+      <td class="num ${chrome.length ? 'no' : 'ok'}">${chrome.length}</td>
+      <td>${chrome.length ? [...new Set(chrome)].join(', ') : 'none, as intended'}</td></tr>` +
+    `<tr><td class="dim">swatches — the colour shown as itself, in G1 and the token grid</td>
+      <td class="num dim">${swat.length}</td><td class="dim">not a design use</td></tr>` +
+    `<tr><td class="dim">specimen frames in G and H — comparisons, not screens</td>
+      <td class="num dim">${spec.length}</td><td class="dim">excluded from the rule</td></tr>` +
+    `</table><p class="pro" style="margin-top:16px;font-size:15px;color:${worst > 1 ? '#B5837A' : '#8FA88F'}">
+      ${total} accent uses across ${screens.length} product screens · worst case
+      <strong>${worst} per screen</strong> · ${chrome.length} anywhere in the page chrome.
+      ${worst > 1 ? 'A screen above is carrying more than one pointer — that is a defect.'
+                  : 'Every one is an emphasis rule under a claim, and no screen carries two.'}</p>`;
+}
+
+/* ───────────────── rail ───────────────── */
+const links = [...document.querySelectorAll('.rail a')];
+const byId = new Map(links.map(a => [a.getAttribute('href').slice(1), a]));
+const railIO = new IntersectionObserver(es => {
+  es.forEach(e => {
+    if (!e.isIntersecting) return;
+    const a = byId.get(e.target.id); if (!a) return;
+    links.forEach(l => l.classList.remove('on')); a.classList.add('on');
+  });
+}, { rootMargin: '-12% 0px -74% 0px' });
+document.querySelectorAll('.plate[id]').forEach(p => railIO.observe(p));
+
+/* ───────────────── the transcript types itself once ───────────────── */
+/* On a timer rather than rAF: a throttled or backgrounded tab starves rAF, and
+   a transcript that never arrives reads as a broken screen rather than a
+   paused one. setInterval degrades to slow; it does not degrade to empty. */
+document.querySelectorAll('[data-type]').forEach(el => {
+  const full = el.textContent.trim(); el.textContent = '';
+  let i = 0, timer = null;
+  const o = new IntersectionObserver(es => es.forEach(e => {
+    if (!e.isIntersecting) return; o.disconnect();
+    if (RM) { el.textContent = full; return; }
+    timer = setInterval(() => {
+      i += 3;                                   /* ~3 glyphs a tick, speech pace */
+      el.textContent = full.slice(0, i);
+      if (i >= full.length) { clearInterval(timer); el.textContent = full; }
+    }, 42);
+  }), { threshold: .4 });
+  o.observe(el);
+});
+
+/* Run the checks after fonts settle so measured sizes are the real ones.
+   Deliberately not chained on requestAnimationFrame: a backgrounded tab
+   freezes rAF, and the verification must still produce its numbers. */
+const runChecks = () => { try { contrastTable(); accentCensus(); } catch (e) {
+  document.getElementById('contrast-out').textContent = 'check failed: ' + e.message; } };
+(document.fonts?.ready || Promise.resolve()).then(() => setTimeout(runChecks, 0));
+setTimeout(runChecks, 2500);   /* backstop if fonts.ready never resolves */
+})();
+</script>

@@ -1,0 +1,25 @@
+# Swift / Xcode
+.build/
+.swiftpm/
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+DerivedData/
+*.moved-aside
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+
+# OS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor
+.idea/
+*.swp
+*.swo
+
+# Distributable builds (may contain baked keys)
+dist/
