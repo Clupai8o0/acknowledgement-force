@@ -133,9 +133,9 @@ fun OnboardingScreen() {
             )
             Spacer(Modifier.weight(1f))
             if (step < lastStep) {
-                PrimaryButton("Continue", { forward = true; step += 1 })
+                PrimaryButton("Continue") { forward = true; step += 1 }
             } else {
-                PrimaryButton("Get Started", { deps.settings.setHasOnboarded(true) })
+                PrimaryButton("Get Started") { deps.settings.setHasOnboarded(true) }
             }
         }
     }

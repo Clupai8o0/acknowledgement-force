@@ -67,6 +67,9 @@ if [ "$PURGE" -eq 1 ]; then
   echo "Purging saved data..."
   [ -d "$SUPPORT_DIR" ] && rm -rf "$SUPPORT_DIR" && echo "  removed $SUPPORT_DIR" || echo "  no saved data"
   defaults delete "$BUNDLE_ID" >/dev/null 2>&1 && echo "  cleared preferences ($BUNDLE_ID)" || true
+  # The Supabase session lives in the Keychain (not in preferences).
+  security delete-generic-password -s "com.acknowledgementforce.sync" -a "supabase-session" \
+    >/dev/null 2>&1 && echo "  removed Keychain session" || true
 else
   echo "Saved data left in place ($SUPPORT_DIR). Use --purge to delete it."
 fi

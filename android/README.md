@@ -14,7 +14,8 @@ sync, packaged for Android phones.
 - **History** — last seven acknowledged actions.
 - **Settings** — profile, appearance (light/dark/follow-system, swatch preview),
   schedule (every-launch → weekly), Supabase sync (email/password login, push,
-  pull, edit-connection), contract editor, non-negotiable list, emergency stop.
+  pull, edit-connection), contract editor, non-negotiable list,
+  emergency stop.
 
 ## Project layout
 

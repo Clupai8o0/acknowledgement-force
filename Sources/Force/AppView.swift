@@ -1,10 +1,12 @@
 import SwiftUI
+import ForceKit
 
 struct AppView: View {
     @EnvironmentObject var store: Store
     @EnvironmentObject var settings: SettingsStore
     @State private var showHistory = false
     @State private var showSettings = false
+    @State private var showFocus = false
     @State private var editingAction = false
     @State private var actionDraft = ""
     @FocusState private var actionFieldFocused: Bool
@@ -23,6 +25,14 @@ struct AppView: View {
         }
         .sheet(isPresented: $showSettings) {
             SettingsView(isPresented: $showSettings)
+        }
+        .sheet(isPresented: $showFocus) {
+            FocusModeView(
+                isPresented: $showFocus,
+                action: store.todayAction,
+                displayName: settings.displayName
+            )
+            .frame(minWidth: 1100, minHeight: 760)
         }
     }
 
@@ -51,13 +61,21 @@ struct AppView: View {
 
             Spacer()
 
-            Button("View Past Actions") { showHistory = true }
-                .buttonStyle(SecondaryPillStyle())
-                .frame(maxWidth: .infinity)
+            VStack(spacing: Space.sm) {
+                Button("View Past Actions") { showHistory = true }
+                    .buttonStyle(SecondaryPillStyle())
+                    .frame(maxWidth: .infinity)
+            }
         }
         .padding(Space.xl)
         .frame(width: 340)
         .background(Ink.containerLow)
+    }
+
+    /// Greets by display name when one is set; plain otherwise.
+    private var welcomeTitle: String {
+        let name = settings.displayName.trimmingCharacters(in: .whitespaces)
+        return name.isEmpty ? "WELCOME BACK" : "WELCOME BACK, \(name.uppercased())"
     }
 
     private func beginEditing() {
@@ -104,7 +122,7 @@ struct AppView: View {
                     RoundedRectangle(cornerRadius: 1)
                         .fill(Ink.ink)
                         .frame(width: 40, height: 2)
-                    Text("WELCOME BACK, SAMRIDH")
+                    Text(welcomeTitle)
                         .font(Type.display(40))
                         .tracking(-0.8)
                         .lineLimit(1)
@@ -133,12 +151,25 @@ struct AppView: View {
 
             // Today's action card
             VStack(alignment: .leading, spacing: Space.md) {
-                HStack {
+                HStack(spacing: Space.md) {
                     Text("TODAY'S HIGHEST-LEVERAGE ACTION")
                         .font(Type.captionSM)
                         .tracking(1.0)
                         .foregroundStyle(Ink.mute)
                     Spacer()
+                    Button {
+                        showFocus = true
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                .font(.system(size: 10, weight: .semibold))
+                            Text("Focus")
+                        }
+                    }
+                    .buttonStyle(GhostTextStyle(color: Ink.mute))
+                    .disabled(store.todayAction.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .opacity(store.todayAction.trimmingCharacters(in: .whitespaces).isEmpty ? 0.4 : 1)
+
                     Button(editingAction ? "Save" : "Edit") {
                         if editingAction { commitAction() } else { beginEditing() }
                     }

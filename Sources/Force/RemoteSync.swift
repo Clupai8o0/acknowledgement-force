@@ -1,7 +1,8 @@
 import Foundation
 import SwiftUI
+import ForceKit
 
-// MARK: - Remote sync (Supabase)
+// MARK: - Remote sync (Supabase) — macOS orchestrator
 //
 // Pulls the editable contract / quotes / goals / reflection from the same
 // Supabase project the web editor writes to, so changes made anywhere land on
@@ -10,9 +11,12 @@ import SwiftUI
 // is applied to SettingsStore, which already persists locally — so the last
 // successful sync is the offline fallback.
 //
-// Note: tokens are kept in UserDefaults to match the rest of the app's storage.
-// Moving them to the Keychain would be a reasonable hardening step.
+// Networking and session lifecycle live in ForceKit (`SyncEngine` /
+// `SupabaseClient`); this type owns what's UI- and platform-specific:
+// published status, dirty tracking, last-write-wins reconciliation, and the
+// Keychain-backed credential (`KeychainSessionStore`).
 
+/// Where the sync pipeline currently stands, for the Settings UI.
 enum SyncStatus: Equatable {
     case needsConfig
     case loggedOut
@@ -29,16 +33,21 @@ final class RemoteSync: ObservableObject {
     private enum Keys {
         static let baseURL = "af-supabase-url-v1"
         static let anonKey = "af-supabase-anon-v1"
-        static let access = "af-supabase-access-v1"
-        static let refresh = "af-supabase-refresh-v1"
-        static let email = "af-supabase-email-v1"
-        static let userId = "af-supabase-userid-v1"
         static let localDirty = "af-sync-dirty-v1"
         static let localUpdatedAt = "af-sync-local-ms-v1"
+        // Legacy plaintext token keys — migrated to the Keychain on first
+        // launch after the security fix, then permanently removed.
+        static let legacyAccess = "af-supabase-access-v1"
+        static let legacyRefresh = "af-supabase-refresh-v1"
+        static let legacyEmail = "af-supabase-email-v1"
+        static let legacyUserId = "af-supabase-userid-v1"
     }
 
+    /// User-entered connection overrides. Not secrets (the anon key is public
+    /// by design), so plain UserDefaults is fine here — unlike the session.
     @Published var baseURL: String { didSet { defaults.set(baseURL, forKey: Keys.baseURL) } }
     @Published var anonKey: String { didSet { defaults.set(anonKey, forKey: Keys.anonKey) } }
+
     @Published private(set) var email: String?
     @Published private(set) var status: SyncStatus = .loggedOut
 
@@ -50,18 +59,9 @@ final class RemoteSync: ObservableObject {
     /// `didSet`s don't get mistaken for user edits.
     private var applyingRemote = false
 
-    private var accessToken: String? {
-        get { defaults.string(forKey: Keys.access) }
-        set { defaults.set(newValue, forKey: Keys.access) }
-    }
-    private var refreshToken: String? {
-        get { defaults.string(forKey: Keys.refresh) }
-        set { defaults.set(newValue, forKey: Keys.refresh) }
-    }
-    private var userId: String? {
-        get { defaults.string(forKey: Keys.userId) }
-        set { defaults.set(newValue, forKey: Keys.userId) }
-    }
+    private let sessionStore: SessionStore
+    private let engine: SyncEngine
+
     private var localUpdatedAt: Double {
         get { defaults.double(forKey: Keys.localUpdatedAt) }
         set { defaults.set(newValue, forKey: Keys.localUpdatedAt) }
@@ -69,27 +69,71 @@ final class RemoteSync: ObservableObject {
 
     /// User-entered overrides win; otherwise fall back to the build-time baked
     /// config (set by install.sh). Lets distributed builds work with no setup.
-    var effectiveURL: String {
-        let override = baseURL.trimmingCharacters(in: .whitespaces)
+    ///
+    /// Static + UserDefaults-backed so the SyncEngine's client factory can
+    /// read the current values from any thread (UserDefaults is thread-safe).
+    nonisolated private static func currentEffectiveURL() -> String {
+        let override = (UserDefaults.standard.string(forKey: Keys.baseURL) ?? "")
+            .trimmingCharacters(in: .whitespaces)
         return override.isEmpty ? SupabaseConfig.url : override
     }
-    var effectiveAnonKey: String {
-        let override = anonKey.trimmingCharacters(in: .whitespaces)
+    nonisolated private static func currentEffectiveAnonKey() -> String {
+        let override = (UserDefaults.standard.string(forKey: Keys.anonKey) ?? "")
+            .trimmingCharacters(in: .whitespaces)
         return override.isEmpty ? SupabaseConfig.anonKey : override
     }
+
+    var effectiveURL: String { Self.currentEffectiveURL() }
+    var effectiveAnonKey: String { Self.currentEffectiveAnonKey() }
 
     var isConfigured: Bool {
         !effectiveURL.isEmpty && !effectiveAnonKey.isEmpty
     }
-    var isLoggedIn: Bool { accessToken != nil }
+    var isLoggedIn: Bool { engine.isLoggedIn }
 
     private init() {
+        let sessionStore = KeychainSessionStore()
+        self.sessionStore = sessionStore
+
         baseURL = defaults.string(forKey: Keys.baseURL) ?? ""
         anonKey = defaults.string(forKey: Keys.anonKey) ?? ""
-        email = defaults.string(forKey: Keys.email)
         localDirty = defaults.bool(forKey: Keys.localDirty)
+
+        // The engine reads config lazily per operation, so edits to the URL or
+        // key fields apply without restarting.
+        engine = SyncEngine(sessionStore: sessionStore) {
+            try SupabaseClient(
+                baseURLString: Self.currentEffectiveURL(),
+                anonKey: Self.currentEffectiveAnonKey()
+            )
+        }
+
+        migrateLegacyTokensIfNeeded()
+        email = sessionStore.load()?.email
         status = !isConfigured ? .needsConfig : (isLoggedIn ? .synced(.distantPast) : .loggedOut)
     }
+
+    /// One-time security migration: sessions used to live in UserDefaults
+    /// (world-readable plist, captured by backups). Move any legacy tokens
+    /// into the Keychain and scrub the plist.
+    private func migrateLegacyTokensIfNeeded() {
+        if sessionStore.load() == nil,
+           let access = defaults.string(forKey: Keys.legacyAccess),
+           let refresh = defaults.string(forKey: Keys.legacyRefresh),
+           let userId = defaults.string(forKey: Keys.legacyUserId) {
+            sessionStore.save(SupabaseSession(
+                accessToken: access,
+                refreshToken: refresh,
+                userId: userId,
+                email: defaults.string(forKey: Keys.legacyEmail)
+            ))
+        }
+        for key in [Keys.legacyAccess, Keys.legacyRefresh, Keys.legacyEmail, Keys.legacyUserId] {
+            defaults.removeObject(forKey: key)
+        }
+    }
+
+    // MARK: Local edit tracking
 
     /// Called from SettingsStore when the user edits a synced field on the Mac.
     /// Records the edit time so the next sync can decide push-vs-pull.
@@ -121,24 +165,20 @@ final class RemoteSync: ObservableObject {
         }
         status = .syncing
         do {
-            let token = try await requestToken(
-                grant: "password",
-                body: ["email": email, "password": password]
-            )
-            store(token: token, email: token.user.email ?? email)
+            let session = try await engine.login(email: email, password: password)
+            self.email = session.email ?? email
             await syncNow()
         } catch {
             status = .error(message(for: error))
         }
     }
 
+    /// Logs out locally right away; server-side revocation happens best-effort
+    /// in the background.
     func logout() {
-        accessToken = nil
-        refreshToken = nil
-        userId = nil
         email = nil
-        defaults.removeObject(forKey: Keys.email)
         status = .loggedOut
+        Task { await engine.logout() }
     }
 
     /// Reconciles local and cloud copies with last-write-wins. If the Mac holds
@@ -147,10 +187,10 @@ final class RemoteSync: ObservableObject {
         guard isConfigured, isLoggedIn else { return }
         status = .syncing
         do {
-            let cloud = try await fetchContent(retryOn401: true)
-            let cloudMs = parseTimestamp(cloud.updated_at)
+            let cloud = try await engine.fetchContent()
+            let cloudMs = PostgresTimestamp.epochMs(cloud.updatedAt)
             if localDirty && localUpdatedAt > cloudMs {
-                try await push(retryOn401: true)
+                try await push()
             } else {
                 apply(cloud)
                 localUpdatedAt = cloudMs
@@ -167,7 +207,7 @@ final class RemoteSync: ObservableObject {
         guard isConfigured, isLoggedIn, localDirty else { return }
         status = .syncing
         do {
-            try await push(retryOn401: true)
+            try await push()
             clearDirty()
             status = .synced(Date())
         } catch {
@@ -175,15 +215,24 @@ final class RemoteSync: ObservableObject {
         }
     }
 
-    // MARK: Apply (cloud -> local)
+    // MARK: Internals
 
+    private func push() async throws {
+        let settings = SettingsStore.shared
+        try await engine.pushContent(
+            contractMd: settings.contractText,
+            goals: settings.nonNegotiables.map { RemoteGoal(id: $0.id, label: $0.label) }
+        )
+    }
+
+    /// Applies a cloud row to local settings (cloud → local direction only).
     private func apply(_ c: RemoteContent) {
         applyingRemote = true
         defer { applyingRemote = false }
 
         let settings = SettingsStore.shared
-        let contract = c.contract_md.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !contract.isEmpty { settings.contractText = c.contract_md }
+        let contract = c.contractMd.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !contract.isEmpty { settings.contractText = c.contractMd }
 
         if !c.goals.isEmpty {
             settings.nonNegotiables = c.goals.map { NonNegotiable(id: $0.id, label: $0.label) }
@@ -195,195 +244,11 @@ final class RemoteSync: ObservableObject {
         settings.reflection = c.reflection
     }
 
-    // MARK: Networking
-
-    private func fetchContent(retryOn401: Bool) async throws -> RemoteContent {
-        guard let token = accessToken else { throw SyncError.notLoggedIn }
-        var req = URLRequest(url: try restURL())
-        req.httpMethod = "GET"
-        req.setValue(effectiveAnonKey, forHTTPHeaderField: "apikey")
-        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        req.setValue("application/json", forHTTPHeaderField: "Accept")
-
-        let (data, response) = try await URLSession.shared.data(for: req)
-        let code = (response as? HTTPURLResponse)?.statusCode ?? 0
-
-        if code == 401, retryOn401 {
-            try await refreshSession()
-            return try await fetchContent(retryOn401: false)
-        }
-        guard (200..<300).contains(code) else {
-            throw SyncError.server(serverMessage(data) ?? "Request failed (\(code)).")
-        }
-        let rows = try JSONDecoder().decode([RemoteContent].self, from: data)
-        guard let row = rows.first else { throw SyncError.server("No contract found for this account.") }
-        return row
-    }
-
-    /// PATCHes only the Mac-owned fields (contract + goals); quotes and
-    /// reflection stay under the web editor's control and are left untouched.
-    private func push(retryOn401: Bool) async throws {
-        guard let token = accessToken, let uid = userId else { throw SyncError.notLoggedIn }
-        let settings = SettingsStore.shared
-        let goals = settings.nonNegotiables.map { ["id": $0.id, "label": $0.label] }
-        let body: [String: Any] = [
-            "contract_md": settings.contractText,
-            "goals": goals,
-        ]
-
-        var req = URLRequest(url: try patchURL(userId: uid))
-        req.httpMethod = "PATCH"
-        req.setValue(effectiveAnonKey, forHTTPHeaderField: "apikey")
-        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        req.setValue("return=minimal", forHTTPHeaderField: "Prefer")
-        req.httpBody = try JSONSerialization.data(withJSONObject: body)
-
-        let (data, response) = try await URLSession.shared.data(for: req)
-        let code = (response as? HTTPURLResponse)?.statusCode ?? 0
-        if code == 401, retryOn401 {
-            try await refreshSession()
-            return try await push(retryOn401: false)
-        }
-        guard (200..<300).contains(code) else {
-            throw SyncError.server(serverMessage(data) ?? "Save failed (\(code)).")
-        }
-    }
-
-    private func refreshSession() async throws {
-        guard let refresh = refreshToken else { throw SyncError.notLoggedIn }
-        let token = try await requestToken(grant: "refresh_token", body: ["refresh_token": refresh])
-        store(token: token, email: token.user.email ?? email ?? "")
-    }
-
-    private func requestToken(grant: String, body: [String: String]) async throws -> TokenResponse {
-        var comps = URLComponents(url: try authBase(), resolvingAgainstBaseURL: false)
-        comps?.queryItems = [URLQueryItem(name: "grant_type", value: grant)]
-        guard let url = comps?.url else { throw SyncError.badConfig }
-
-        var req = URLRequest(url: url)
-        req.httpMethod = "POST"
-        req.setValue(effectiveAnonKey, forHTTPHeaderField: "apikey")
-        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        req.httpBody = try JSONSerialization.data(withJSONObject: body)
-
-        let (data, response) = try await URLSession.shared.data(for: req)
-        let code = (response as? HTTPURLResponse)?.statusCode ?? 0
-        guard (200..<300).contains(code) else {
-            if grant == "refresh_token" { logout() }
-            throw SyncError.server(serverMessage(data) ?? "Login failed (\(code)).")
-        }
-        return try JSONDecoder().decode(TokenResponse.self, from: data)
-    }
-
-    private func store(token: TokenResponse, email: String) {
-        accessToken = token.access_token
-        refreshToken = token.refresh_token
-        userId = token.user.id
-        self.email = email
-        defaults.set(email, forKey: Keys.email)
-    }
-
-    // MARK: URL helpers
-
-    private func normalizedBase() throws -> URL {
-        var s = effectiveURL
-        if s.hasSuffix("/") { s.removeLast() }
-        guard let url = URL(string: s), url.scheme != nil else { throw SyncError.badConfig }
-        return url
-    }
-    private func authBase() throws -> URL {
-        try normalizedBase().appendingPathComponent("auth/v1/token")
-    }
-    private func restURL() throws -> URL {
-        var comps = URLComponents(
-            url: try normalizedBase().appendingPathComponent("rest/v1/contents"),
-            resolvingAgainstBaseURL: false
-        )
-        comps?.queryItems = [
-            URLQueryItem(name: "select", value: "contract_md,quotes,goals,reflection,updated_at"),
-            URLQueryItem(name: "limit", value: "1"),
-        ]
-        guard let url = comps?.url else { throw SyncError.badConfig }
-        return url
-    }
-    private func patchURL(userId: String) throws -> URL {
-        var comps = URLComponents(
-            url: try normalizedBase().appendingPathComponent("rest/v1/contents"),
-            resolvingAgainstBaseURL: false
-        )
-        comps?.queryItems = [URLQueryItem(name: "user_id", value: "eq.\(userId)")]
-        guard let url = comps?.url else { throw SyncError.badConfig }
-        return url
-    }
-
-    /// Parses a PostgREST timestamptz ("2026-05-22T10:00:00.123456+00:00") to
-    /// epoch ms. Fractional seconds are trimmed to milliseconds for ISO8601.
-    private func parseTimestamp(_ s: String?) -> Double {
-        guard var str = s else { return 0 }
-        if let dot = str.firstIndex(of: ".") {
-            var i = str.index(after: dot)
-            var frac = ""
-            while i < str.endIndex, str[i].isNumber {
-                frac.append(str[i])
-                i = str.index(after: i)
-            }
-            let ms = String(frac.prefix(3))
-            str.replaceSubrange(dot..<i, with: ms.isEmpty ? "" : "." + ms)
-        }
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let d = f.date(from: str) { return d.timeIntervalSince1970 * 1000 }
-        f.formatOptions = [.withInternetDateTime]
-        if let d = f.date(from: str) { return d.timeIntervalSince1970 * 1000 }
-        return 0
-    }
-
-    // MARK: Errors
-
-    private func serverMessage(_ data: Data) -> String? {
-        guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
-        return (obj["error_description"] as? String)
-            ?? (obj["msg"] as? String)
-            ?? (obj["message"] as? String)
-            ?? (obj["error"] as? String)
-    }
-
     private func message(for error: Error) -> String {
         switch error {
-        case SyncError.server(let m): return m
-        case SyncError.badConfig: return "Check the Supabase URL and key."
-        case SyncError.notLoggedIn: return "Not logged in."
+        case let e as SyncError: return e.message
+        case let e as HTTPStatusError: return e.message
         default: return (error as NSError).localizedDescription
         }
     }
-}
-
-private enum SyncError: Error {
-    case badConfig
-    case notLoggedIn
-    case server(String)
-}
-
-// MARK: - Wire models
-
-private struct TokenResponse: Codable {
-    let access_token: String
-    let refresh_token: String
-    let user: TokenUser
-}
-private struct TokenUser: Codable {
-    let id: String
-    let email: String?
-}
-private struct RemoteGoal: Codable {
-    let id: String
-    let label: String
-}
-private struct RemoteContent: Codable {
-    let contract_md: String
-    let quotes: [String]
-    let goals: [RemoteGoal]
-    let reflection: String
-    let updated_at: String?
 }

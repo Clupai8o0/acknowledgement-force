@@ -1,6 +1,6 @@
 import { authenticate, authError } from "@/lib/auth/apiKey";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { badRequest, readJson, serverError } from "@/lib/api-utils";
+import { badRequest, LIMITS, readJson, serverError } from "@/lib/api-utils";
 import { type Goal, slugId } from "@/lib/content";
 
 export async function GET(req: Request) {
@@ -27,7 +27,13 @@ export async function PUT(req: Request) {
   if (!Array.isArray(raw)) {
     return badRequest("Body must be { goals: Goal[] }");
   }
+  if (raw.length > LIMITS.maxGoals) {
+    return badRequest(`At most ${LIMITS.maxGoals} goals`);
+  }
 
+  // Client-supplied ids are convenience, not trusted input: anything that
+  // isn't a short slug is regenerated from the label.
+  const idPattern = /^[a-z0-9-]{1,40}$/;
   const seen = new Set<string>();
   const goals: Goal[] = [];
   for (const item of raw) {
@@ -35,10 +41,15 @@ export async function PUT(req: Request) {
       return badRequest("Each goal must be an object");
     }
     const obj = item as { id?: unknown; label?: unknown };
-    const label = typeof obj.label === "string" ? obj.label : "";
-    if (!label.trim()) return badRequest("Each goal needs a label");
+    const label = typeof obj.label === "string" ? obj.label.trim() : "";
+    if (!label) return badRequest("Each goal needs a label");
+    if (label.length > LIMITS.goalLabelChars) {
+      return badRequest(`Goal labels must be at most ${LIMITS.goalLabelChars} characters`);
+    }
     let id =
-      typeof obj.id === "string" && obj.id.trim() ? obj.id.trim() : slugId(label);
+      typeof obj.id === "string" && idPattern.test(obj.id.trim())
+        ? obj.id.trim()
+        : slugId(label);
     while (seen.has(id)) id = `${id}-${Math.random().toString(36).slice(2, 5)}`;
     seen.add(id);
     goals.push({ id, label });

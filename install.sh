@@ -6,6 +6,8 @@
 #   ./install.sh                 Install to ~/Applications (no sudo needed)
 #   ./install.sh --system        Install to /Applications (asks for sudo)
 #   ./install.sh --prefix DIR    Install into a custom directory
+#   ./install.sh --update        Re-build and replace the existing install in place
+#                                (auto-detects the current install location)
 #   ./install.sh --no-open       Don't launch the app after installing
 #   ./install.sh --replace-others  Remove copies in other locations, no prompt
 #   ./install.sh --keep-others   Leave copies in other locations in place
@@ -39,17 +41,20 @@ VERSION="$(tr -d '[:space:]' < "$REPO_DIR/VERSION" 2>/dev/null || echo "0.0.0")"
 ICON_SRC="$REPO_DIR/landing/assets/raw/icon.png"
 
 PREFIX="$HOME/Applications"
+PREFIX_EXPLICIT=0
 OPEN_AFTER=1
 USE_SUDO=""
 REPLACE_OTHERS=0
 KEEP_OTHERS=0
 PACKAGE=0
+UPDATE=0
 RECORD="$HOME/Library/Application Support/$EXEC_NAME/install-locations"
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --system) PREFIX="/Applications"; shift ;;
-    --prefix) PREFIX="$2"; shift 2 ;;
+    --system) PREFIX="/Applications"; PREFIX_EXPLICIT=1; shift ;;
+    --prefix) PREFIX="$2"; PREFIX_EXPLICIT=1; shift 2 ;;
+    --update) UPDATE=1; shift ;;
     --no-open) OPEN_AFTER=0; shift ;;
     --package) PACKAGE=1; shift ;;
     --replace-others) REPLACE_OTHERS=1; shift ;;
@@ -58,6 +63,38 @@ while [ $# -gt 0 ]; do
     *) echo "Unknown option: $1" >&2; exit 2 ;;
   esac
 done
+
+# --update: locate the current install and use its directory as PREFIX. This
+# makes "upgrade in place" a one-line ergonomic. Falls back to the default
+# prefix if we can't find an existing copy. Implies --keep-others (the existing
+# install IS the one we're updating, others are unrelated and unchanged).
+if [ "$UPDATE" -eq 1 ]; then
+  FOUND=""
+  CANDIDATES=("$HOME/Applications/$APP_NAME.app" "/Applications/$APP_NAME.app")
+  if [ -f "$RECORD" ]; then
+    while IFS= read -r line; do
+      [ -n "$line" ] && CANDIDATES+=("$line/$APP_NAME.app")
+    done < "$RECORD"
+  fi
+  for c in "${CANDIDATES[@]}"; do
+    [ -d "$c" ] || continue
+    FOUND="$(cd "$(dirname "$c")" && pwd -P)"
+    break
+  done
+  if [ -n "$FOUND" ]; then
+    if [ "$PREFIX_EXPLICIT" -eq 1 ] && [ "$PREFIX" != "$FOUND" ]; then
+      echo "Note: --update found existing install at $FOUND but you also passed"
+      echo "      --prefix/--system. Honoring the explicit flag and installing to $PREFIX."
+    else
+      PREFIX="$FOUND"
+      echo "==> Update mode: replacing existing install at $PREFIX"
+    fi
+  else
+    echo "==> Update mode: no existing install found, installing fresh to $PREFIX"
+  fi
+  # In update mode we don't want to prompt or churn other copies — just refresh.
+  KEEP_OTHERS=1
+fi
 
 # Normalize to an absolute path so duplicate detection and the sudo check below
 # compare apples to apples.
@@ -84,7 +121,7 @@ esac
 #   FORCE_SUPABASE_URL=https://xxxx.supabase.co \
 #   FORCE_SUPABASE_ANON_KEY=eyJ... ./install.sh
 # The anon key is the public key (protected by row-level security), safe to embed.
-CONFIG_SRC="$REPO_DIR/Sources/Force/SupabaseConfig.swift"
+CONFIG_SRC="$REPO_DIR/Sources/ForceKit/Sync/SupabaseConfig.swift"
 CONFIG_BACKUP=""
 STAGE=""
 cleanup() {
@@ -94,10 +131,21 @@ cleanup() {
 trap cleanup EXIT
 
 if [ -n "${FORCE_SUPABASE_URL:-}" ] && [ -n "${FORCE_SUPABASE_ANON_KEY:-}" ]; then
+  # Validate before splicing into Swift source: a malformed value would
+  # otherwise corrupt the string literal (or worse, inject code).
+  case "$FORCE_SUPABASE_URL" in
+    https://*) ;;
+    *) echo "Error: FORCE_SUPABASE_URL must start with https://" >&2; exit 1 ;;
+  esac
+  case "$FORCE_SUPABASE_URL$FORCE_SUPABASE_ANON_KEY" in
+    *'|'*|*'"'*|*'\'*|*'&'*|*'$'*)
+      echo "Error: FORCE_SUPABASE_URL / FORCE_SUPABASE_ANON_KEY must not contain | \" \\ & or \$" >&2
+      exit 1 ;;
+  esac
   echo "==> Baking Supabase connection into the build..."
   CONFIG_BACKUP="$(mktemp)"
   cp "$CONFIG_SRC" "$CONFIG_BACKUP"
-  # '|' is a safe delimiter: URLs and JWT anon keys never contain it.
+  # '|' is a safe delimiter: validated above, URLs and anon keys never contain it.
   sed -i '' \
     -e "s|__FORCE_SUPABASE_URL__|${FORCE_SUPABASE_URL}|g" \
     -e "s|__FORCE_SUPABASE_ANON_KEY__|${FORCE_SUPABASE_ANON_KEY}|g" \
@@ -183,13 +231,20 @@ if [ "$PACKAGE" -eq 1 ]; then
   # ditto preserves the bundle structure, symlinks, and code signature.
   ditto -c -k --keepParent "$DIST/$APP_NAME.app" "$ZIP"
   echo "==> Packaged: $ZIP"
+  # Publish this hash next to the download so recipients can verify the zip
+  # wasn't tampered with in transit (the build is not notarized).
+  if command -v shasum >/dev/null 2>&1; then
+    SHA="$(shasum -a 256 "$ZIP" | cut -d' ' -f1)"
+    echo "    SHA-256: $SHA"
+    echo "$SHA  $(basename "$ZIP")" > "$ZIP.sha256"
+  fi
   if [ -z "${FORCE_SUPABASE_URL:-}" ] || [ -z "${FORCE_SUPABASE_ANON_KEY:-}" ]; then
     echo "    NOTE: built WITHOUT baked keys — set FORCE_SUPABASE_URL and"
     echo "    FORCE_SUPABASE_ANON_KEY to embed them so recipients only log in."
   fi
   echo "    This build is ad-hoc signed, not notarized: on first open the"
-  echo "    recipient must right-click the app and choose Open (or run"
-  echo "    'xattr -dr com.apple.quarantine \"<app>\"')."
+  echo "    recipient must right-click the app and choose Open the first time."
+  echo "    For wider distribution, sign with a Developer ID and notarize."
   exit 0
 fi
 

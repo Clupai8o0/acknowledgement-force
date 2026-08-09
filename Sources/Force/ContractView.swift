@@ -1,4 +1,5 @@
 import SwiftUI
+import ForceKit
 
 struct ContractView: View {
     @EnvironmentObject var store: Store

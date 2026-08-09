@@ -30,7 +30,10 @@ struct RootView: View {
             }
 
             if needsIntro {
-                IntroView(onFinish: { withAnimation(.easeOut(duration: 0.7)) { introDone = true } })
+                IntroView(
+                    displayName: settings.displayName,
+                    onFinish: { withAnimation(.easeOut(duration: 0.7)) { introDone = true } }
+                )
                     .transition(.opacity)
                     .zIndex(1)
             }
@@ -47,11 +50,20 @@ struct RootView: View {
 // Soft radial glow + breathing concentric rings + blur-in text. ~3.2s, then fades.
 
 struct IntroView: View {
+    let displayName: String
     let onFinish: () -> Void
     @State private var appeared = false
     @State private var breathe = false
     @State private var collapsing = false
     @State private var textBlur: CGFloat = 14
+
+    /// Greets by display name when one is set; plain otherwise.
+    private var welcomeLine: String {
+        let name = displayName.trimmingCharacters(in: .whitespaces)
+        return name.isEmpty
+            ? "Welcome. Take a deep breath."
+            : "Welcome, \(name). Take a deep breath."
+    }
 
     // Rings rush back inward (the reverse of their spread-out entrance),
     // converging toward the title before the contract dissolves in.
@@ -144,7 +156,7 @@ struct IntroView: View {
                     .font(Type.display(58))
                     .tracking(-0.5)
                     .foregroundStyle(Ink.ink)
-                Text("Welcome, Samridh. Take a deep breath.")
+                Text(welcomeLine)
                     .font(Type.bodyMD)
                     .foregroundStyle(Ink.mute)
                     .padding(.top, Space.sm)

@@ -41,6 +41,21 @@ export async function createApiKey(input: {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Not signed in" };
 
+  // Cap active (non-revoked) keys per account so a compromised session can't
+  // mint an unbounded pile of long-lived credentials.
+  const { count, error: countErr } = await supabase
+    .from("api_keys")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .is("revoked_at", null);
+  if (countErr) {
+    console.error("[settings] key count failed:", countErr.message);
+    return { ok: false, error: "Could not create the key" };
+  }
+  if ((count ?? 0) >= 20) {
+    return { ok: false, error: "Key limit reached (20) — revoke an unused key first" };
+  }
+
   const { raw, prefix, hash } = generateKey();
   const { error } = await supabase.from("api_keys").insert({
     user_id: user.id,
@@ -50,7 +65,11 @@ export async function createApiKey(input: {
     scopes,
     expires_at: expiresAt,
   });
-  if (error) return { ok: false, error: error.message };
+  // Log the real error; database messages leak schema details to the UI.
+  if (error) {
+    console.error("[settings] key insert failed:", error.message);
+    return { ok: false, error: "Could not create the key" };
+  }
 
   revalidatePath("/settings/api-keys");
   return { ok: true, raw, prefix, name };
@@ -71,7 +90,10 @@ export async function revokeApiKey(
     .update({ revoked_at: new Date().toISOString() })
     .eq("id", id)
     .eq("user_id", user.id);
-  if (error) return { ok: false, error: error.message };
+  if (error) {
+    console.error("[settings] key revoke failed:", error.message);
+    return { ok: false, error: "Could not revoke the key" };
+  }
 
   revalidatePath("/settings/api-keys");
   return { ok: true };

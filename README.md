@@ -8,6 +8,9 @@ and native to macOS.
 Optionally, sign in to **sync your contract, quotes, goals, and reflection**
 from a web editor — edit from anywhere and it lands on your Mac on launch.
 
+It also ships with a **Focus mode** that puts today's highest-leverage action
+on a quiet full-screen canvas.
+
 ![macOS](https://img.shields.io/badge/macOS-14%2B-black)
 ![Swift](https://img.shields.io/badge/Swift-6-orange)
 ![License](https://img.shields.io/badge/License-MIT-blue)
@@ -56,13 +59,17 @@ launches when the build finishes.
 | `./install.sh` | Install to `~/Applications` |
 | `./install.sh --system` | Install to `/Applications` (prompts for `sudo`) |
 | `./install.sh --prefix DIR` | Install into a custom directory |
+| `./install.sh --update` | Re-build and replace the existing install in place (auto-detects current location) |
 | `./install.sh --no-open` | Don't launch the app after installing |
 | `./install.sh --replace-others` | Remove copies in other locations without asking |
 | `./install.sh --keep-others` | Leave copies in other locations in place |
 | `./install.sh --package` | Build a shareable `.zip` in `./dist` instead of installing |
 
 `install.sh` is safe to re-run — it cleanly replaces any previous copy, so it
-doubles as the upgrade path.
+doubles as the upgrade path. For the ergonomic one-liner upgrade, use
+`./install.sh --update`: it finds your current install (in `~/Applications`,
+`/Applications`, or any custom prefix you've used before) and refreshes it in
+place without prompts.
 
 ### No accidental duplicates
 
@@ -86,6 +93,12 @@ single-instance lock at runtime, so only one copy can ever actually run.
 2. Read the day's contract, tick the acknowledgement box, and write your single
    highest-leverage action. The window stays locked until you do.
 3. Once acknowledged, the gate opens and you can close the window.
+
+### Focus mode
+
+On the dashboard, the today's-action card has a small **Focus** button. It
+expands the action into a quiet, full-canvas view — just the words, a
+breathing radial wash, and your signature. Press **ESC** to come back.
 
 ### Auto-launch
 
@@ -173,12 +186,59 @@ full uninstall, run:
 ./uninstall.sh --system   # also look in /Applications
 ```
 
+## Linux & Windows — `force-cli`
+
+The Swift code is split into a cross-platform core (`ForceKit`) and front
+ends. On Linux and Windows, Force runs as a terminal app with the same
+contract, gate policy, and cloud sync as the Mac app:
+
+```sh
+# Linux (Swift 6 toolchain: https://swift.org/install)
+swift build -c release --product force-cli
+.build/release/force-cli help
+```
+
+```powershell
+# Windows (Swift 6 toolchain via swift.org or winget)
+swift build -c release --product force-cli
+.build\release\force-cli.exe help
+```
+
+Daily flow:
+
+```sh
+force-cli              # status: locked or open? (exit code 3 when locked)
+force-cli ack          # read the contract, type "I ACKNOWLEDGE", name your action
+force-cli check        # show the daily checklist; `check 3` toggles item 3
+force-cli history      # past actions
+```
+
+Cloud sync (same account as the Mac app / web editor):
+
+```sh
+force-cli config set url https://YOUR-REF.supabase.co
+force-cli config set key sb_publishable_...
+force-cli login you@example.com
+force-cli sync
+```
+
+State lives in the platform's per-user data directory (`force-cli config`
+prints the path; override with `FORCE_STATE_DIR`). Files holding credentials
+are written owner-only (0600). To re-lock on a schedule, hook `force-cli
+status` into your shell profile, a systemd user timer, or Windows Task
+Scheduler — exit code 3 means "locked".
+
+> On Windows the interactive password prompt echoes; use
+> `force-cli login you@example.com --password-stdin` and pipe the password
+> instead.
+
 ## Build from source (development)
 
 ```sh
-swift build                 # debug build
-swift run Force             # build & run
-swift build -c release      # optimized release binary
+swift build                          # debug build (all targets)
+swift run Force                      # build & run the macOS app
+swift run force-cli status           # build & run the CLI
+swift build -c release               # optimized release binaries
 ```
 
 The release binary and its resource bundle (`Force_Force.bundle`) land in the
@@ -187,14 +247,21 @@ directory printed by `swift build -c release --show-bin-path`.
 ## Project layout
 
 ```
-Sources/Force/      SwiftUI app source + bundled fonts
+Sources/ForceKit/   Cross-platform core: models, contract parser, gate logic,
+                    persistence, Supabase sync (builds on macOS/Linux/Windows)
+Sources/Force/      macOS SwiftUI app + bundled fonts
+Sources/ForceCLI/   force-cli — terminal front end for Linux/Windows (and macOS)
 web/                Next.js web editor + Supabase migration (optional cloud sync)
 landing/            Legacy static marketing site (superseded by web/)
-install.sh          Build + package + install the .app
+docs/               Architecture and design notes
+install.sh          Build + package + install the macOS .app
 uninstall.sh        Remove the app, agent, and (optionally) data
 stop.sh             Quit now + disable auto-launch (no uninstall)
 VERSION             Release version (drives the bundle version)
 ```
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how the targets fit
+together.
 
 ## Releasing
 

@@ -1,36 +1,42 @@
 import Foundation
 
-// The daily contract, modeled as typed blocks. It is authored as plain Markdown
-// (editable in Settings) and parsed into blocks for rendering. {{DATE}} is
-// substituted at render time.
+// The daily contract, modeled as typed blocks. It is authored as plain
+// Markdown (editable in Settings / the web editor) and parsed into blocks so
+// each front end can render it natively (SwiftUI views, terminal text).
+// {{DATE}} and {{NAME}} are substituted at render time.
 
-enum ContractBlock: Identifiable {
+/// One block-level element of the rendered contract.
+public enum ContractBlock: Equatable, Sendable {
     case h1(String)
     case h2(String)
     case h3(String)
     case rule
-    case paragraph([Inline])       // supports bold runs
+    case paragraph([Inline])
     case numbered(Int, [Inline])
     case bullet([Inline])
     case checkbox([Inline])
     case blockquote([Inline])
-
-    var id: String { UUID().uuidString }
 }
 
-enum Inline {
+/// An inline run within a block — plain or bold text.
+public enum Inline: Equatable, Sendable {
     case plain(String)
     case bold(String)
 }
 
-enum Contract {
+public enum Contract {
     /// Parses editable Markdown into renderable blocks.
     ///
     /// Supported line forms:
     ///   `# / ## / ###` headings · `---`/`***`/`___` rule · `1.` numbered ·
     ///   `- `/`* ` bullet · `[ ]`/`- [ ]`/`- [x]` checkbox · `> ` blockquote ·
     ///   `**bold**` inline · everything else is a paragraph.
-    static func blocks(from markdown: String, date: String, name: String = "") -> [ContractBlock] {
+    ///
+    /// - Parameters:
+    ///   - markdown: The contract source text.
+    ///   - date: Replaces `{{DATE}}` occurrences.
+    ///   - name: Replaces `{{NAME}}` occurrences.
+    public static func blocks(from markdown: String, date: String, name: String = "") -> [ContractBlock] {
         let text = markdown
             .replacingOccurrences(of: "{{DATE}}", with: date)
             .replacingOccurrences(of: "{{NAME}}", with: name)
@@ -95,7 +101,8 @@ enum Contract {
         return runs.isEmpty ? [.plain(s)] : runs
     }
 
-    static let defaultMarkdown = """
+    /// The stock contract a fresh install starts with.
+    public static let defaultMarkdown = """
     # Acknowledgement Force Daily Contract
     **Date:** {{DATE}}
     **For:** {{NAME}}

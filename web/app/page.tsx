@@ -164,10 +164,12 @@ export default function Home() {
             <span>Acknowledge intentionally</span>
             <span>No escape until you commit</span>
             <span>One highest-leverage action</span>
+            <span>Focus mode</span>
             <span>Read carefully</span>
             <span>Acknowledge intentionally</span>
             <span>No escape until you commit</span>
             <span>One highest-leverage action</span>
+            <span>Focus mode</span>
           </div>
         </div>
 
@@ -521,6 +523,23 @@ export default function Home() {
                   Breathing rings, soft-focus dissolves, spring physics
                   everywhere. Choose how often it re-locks — every launch,
                   hourly, daily, weekly, or on login.
+                </p>
+              </div>
+            </div>
+            <div className="feature reveal">
+              <div className="ico">
+                <img
+                  src="/assets/illustrations/lock.png"
+                  alt="A single line of focused text"
+                  loading="lazy"
+                />
+              </div>
+              <div>
+                <h3>Focus mode</h3>
+                <p>
+                  One click puts today&apos;s highest-leverage action on a
+                  quiet, breathing canvas — no chrome, no chatter, just the
+                  words you wrote yourself. ESC to come back.
                 </p>
               </div>
             </div>

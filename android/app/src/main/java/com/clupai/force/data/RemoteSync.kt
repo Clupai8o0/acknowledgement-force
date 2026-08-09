@@ -195,7 +195,7 @@ class RemoteSync(context: Context, private val settings: SettingsStore) {
         }
     }
 
-    private suspend fun push(retryOn401: Boolean) = withContext(Dispatchers.IO) {
+    private suspend fun push(retryOn401: Boolean): Unit = withContext(Dispatchers.IO) {
         val token = accessToken ?: throw SyncException("Not logged in.")
         val uid = userId ?: throw SyncException("Not logged in.")
         val body = buildJsonObject {

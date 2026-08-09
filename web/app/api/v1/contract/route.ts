@@ -1,6 +1,6 @@
 import { authenticate, authError } from "@/lib/auth/apiKey";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { badRequest, readJson, serverError } from "@/lib/api-utils";
+import { badRequest, LIMITS, readJson, serverError } from "@/lib/api-utils";
 
 export async function GET(req: Request) {
   const auth = await authenticate(req, "contract:read");
@@ -27,6 +27,9 @@ export async function PUT(req: Request) {
   const body = await readJson(req);
   if (!body || typeof body.contract_md !== "string") {
     return badRequest("Body must be { contract_md: string }");
+  }
+  if (body.contract_md.length > LIMITS.contractChars) {
+    return badRequest(`contract_md must be at most ${LIMITS.contractChars} characters`);
   }
 
   const supabase = createAdminClient();

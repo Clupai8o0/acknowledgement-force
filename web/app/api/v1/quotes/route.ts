@@ -1,6 +1,6 @@
 import { authenticate, authError } from "@/lib/auth/apiKey";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { badRequest, readJson, serverError } from "@/lib/api-utils";
+import { badRequest, LIMITS, readJson, serverError } from "@/lib/api-utils";
 
 export async function GET(req: Request) {
   const auth = await authenticate(req, "quotes:read");
@@ -24,6 +24,9 @@ export async function POST(req: Request) {
   const body = await readJson(req);
   const text = body && typeof body.text === "string" ? body.text.trim() : "";
   if (!text) return badRequest("Body must be { text: string }");
+  if (text.length > LIMITS.quoteChars) {
+    return badRequest(`Quotes must be at most ${LIMITS.quoteChars} characters`);
+  }
 
   const supabase = createAdminClient();
   const { data: existing, error: readErr } = await supabase
@@ -33,7 +36,11 @@ export async function POST(req: Request) {
     .maybeSingle();
   if (readErr) return serverError(readErr.message);
 
-  const next = [...((existing?.quotes as string[]) ?? []), text];
+  const current = (existing?.quotes as string[]) ?? [];
+  if (current.length >= LIMITS.maxQuotes) {
+    return badRequest(`At most ${LIMITS.maxQuotes} quotes — delete one first`);
+  }
+  const next = [...current, text];
   const { error: writeErr } = await supabase
     .from("contents")
     .upsert(

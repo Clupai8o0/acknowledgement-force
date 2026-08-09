@@ -50,6 +50,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
 
+    // launchd's hourly `open Force.app` lands here when Force is already running.
+    // Without this, a minimized window stays in the Dock (makeKeyAndOrderFront
+    // doesn't deminiaturize) and the user never sees the freshly-locked contract.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        NSApp.activate(ignoringOtherApps: true)
+        for window in NSApp.windows {
+            if window.isMiniaturized { window.deminiaturize(nil) }
+            if window.canBecomeMain { window.makeKeyAndOrderFront(nil) }
+        }
+        Store.shared.recomputeGate()
+        return true
+    }
+
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         // Allow close once today's contract is acknowledged, or when the
         // in-app Exit button explicitly authorizes it.

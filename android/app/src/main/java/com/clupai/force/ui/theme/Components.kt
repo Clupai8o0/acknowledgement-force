@@ -48,9 +48,9 @@ fun primaryGradient(): Brush {
 @Composable
 fun PrimaryButton(
     text: String,
-    onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    onClick: () -> Unit,
 ) {
     val ink = LocalInk.current
     val interaction = remember { MutableInteractionSource() }
@@ -77,9 +77,9 @@ fun PrimaryButton(
 @Composable
 fun SecondaryButton(
     text: String,
-    onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    onClick: () -> Unit,
 ) {
     val ink = LocalInk.current
     val interaction = remember { MutableInteractionSource() }
@@ -100,8 +100,8 @@ fun SecondaryButton(
 }
 
 @Composable
-fun DangerButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    PrimaryButton(text, onClick, modifier) // monochrome system — confirmation dialog carries the warning
+fun DangerButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    PrimaryButton(text, modifier, onClick = onClick) // monochrome system — confirmation dialog carries the warning
 }
 
 @Composable
@@ -224,7 +224,7 @@ fun SquareCheckbox(
 
 // Segment chip — used in appearance mode picker.
 @Composable
-fun SegmentChip(label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun SegmentChip(label: String, selected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val ink = LocalInk.current
     val scale by animateFloatAsState(if (selected) 1.02f else 1f, spring(0.65f, Spring.StiffnessMediumLow), label = "seg")
     Box(
@@ -263,11 +263,7 @@ fun RadioRow(title: String, detail: String, selected: Boolean, onClick: () -> Un
                 .border(1.5.dp, if (selected) ink.ink else ink.outline, androidx.compose.foundation.shape.CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            AnimatedVisibility(
-                visible = selected,
-                enter = scaleIn(initialScale = 0.3f) + fadeIn(),
-                exit = scaleOut(targetScale = 0.3f) + fadeOut(),
-            ) {
+            if (selected) {
                 Box(
                     Modifier
                         .size(10.dp)

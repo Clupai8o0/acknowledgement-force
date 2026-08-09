@@ -13,6 +13,14 @@ export async function proxy(request: NextRequest) {
   if (!url || !key) return response;
 
   const supabase = createServerClient(url, key, {
+      // Auth cookies are signed JWTs. They can't be httpOnly (the browser
+      // Supabase client needs to read them), so we pin the rest: HTTPS-only
+      // in production and SameSite=Lax so cross-site requests never carry
+      // the session.
+      cookieOptions: {
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+      },
       cookies: {
         getAll() {
           return request.cookies.getAll();

@@ -1,93 +1,22 @@
 import Foundation
 import SwiftUI
+import ForceKit
 
-// MARK: - Schedule
-
-enum Frequency: String, Codable, CaseIterable, Identifiable {
-    case everyLaunch
-    case hourly
-    case every12h
-    case daily
-    case weekly
-    case onLogin
-
-    var id: String { rawValue }
-
-    var label: String {
-        switch self {
-        case .everyLaunch: return "Every launch"
-        case .hourly:      return "Every hour"
-        case .every12h:    return "Every 12 hours"
-        case .daily:       return "Once a day"
-        case .weekly:      return "Once a week"
-        case .onLogin:     return "On login / restart"
-        }
-    }
-
-    var detail: String {
-        switch self {
-        case .everyLaunch: return "Re-acknowledge each time Force opens."
-        case .hourly:      return "Re-locks one hour after each acknowledgement."
-        case .every12h:    return "Re-locks twelve hours after each acknowledgement."
-        case .daily:       return "One acknowledgement carries the whole day."
-        case .weekly:      return "One acknowledgement carries the whole week."
-        case .onLogin:     return "Re-acknowledge on every login and restart."
-        }
-    }
-
-    /// Seconds between forced relaunches for launchd, when applicable.
-    var startInterval: Int? {
-        switch self {
-        case .hourly:   return 3600
-        case .every12h: return 43_200
-        default:        return nil
-        }
-    }
-}
-
-// MARK: - Editable copy
-
-struct NonNegotiable: Codable, Identifiable, Equatable {
-    var id: String
-    var label: String
-}
-
-enum DefaultCopy {
-    static let motivation = "Execution beats planning. Commits, deployments, and documentation are the only valid measures."
-
-    static let nonNegotiables: [NonNegotiable] = [
-        .init(id: "brush-teeth", label: "Brush teeth (morning & night)"),
-        .init(id: "wash-face", label: "Wash face (morning & night)"),
-        .init(id: "leetcode", label: "LeetCode: 1 problem minimum"),
-        .init(id: "cold-message", label: "Send 1 cold message/email"),
-        .init(id: "gym", label: "Gym/30min physical activity"),
-        .init(id: "journal", label: "Journal: 5-10 minutes"),
-        .init(id: "read", label: "Read: 15-30 minutes"),
-        .init(id: "no-doomscroll", label: "No doomscrolling (sit in silence 5-10 min)"),
-    ]
-}
-
-// MARK: - Settings store
-
+/// Observable façade over ForceKit's ``SettingsStorage`` for the macOS UI.
+///
+/// Each `@Published` property mirrors a persisted setting and writes through
+/// on change; side effects that belong to the platform (LaunchAgent installs,
+/// gate recomputation, sync dirty-marking) hang off the `didSet`s here, not in
+/// the storage layer.
 @MainActor
 final class SettingsStore: ObservableObject {
     static let shared = SettingsStore()
 
-    private let defaults = UserDefaults.standard
-    private enum Keys {
-        static let frequency = "af-frequency-v1"
-        static let autoLaunch = "af-autolaunch-v1"
-        static let motivation = "af-motivation-v1"
-        static let contractText = "af-contract-text-v1"
-        static let nonNegotiables = "af-nonnegotiables-v1"
-        static let onboarded = "af-onboarded-v1"
-        static let reflection = "af-reflection-v1"
-        static let displayName = "af-display-name-v1"
-    }
+    private let storage = SettingsStorage(store: UserDefaultsKeyValueStore())
 
     @Published var frequency: Frequency {
         didSet {
-            defaults.set(frequency.rawValue, forKey: Keys.frequency)
+            storage.frequency = frequency
             Store.shared.recomputeGate()
             if autoLaunch { LaunchAgent.install(for: frequency) }
         }
@@ -95,65 +24,60 @@ final class SettingsStore: ObservableObject {
 
     @Published var autoLaunch: Bool {
         didSet {
-            defaults.set(autoLaunch, forKey: Keys.autoLaunch)
+            storage.autoLaunch = autoLaunch
             if autoLaunch { LaunchAgent.install(for: frequency) } else { LaunchAgent.uninstall() }
         }
     }
 
     @Published var motivation: String {
         didSet {
-            defaults.set(motivation, forKey: Keys.motivation)
+            storage.motivation = motivation
             RemoteSync.shared.markLocalEdit()
         }
     }
 
     @Published var contractText: String {
         didSet {
-            defaults.set(contractText, forKey: Keys.contractText)
+            storage.contractText = contractText
             RemoteSync.shared.markLocalEdit()
         }
     }
 
     @Published var reflection: String {
-        didSet { defaults.set(reflection, forKey: Keys.reflection) }
+        didSet { storage.reflection = reflection }
     }
 
     @Published var nonNegotiables: [NonNegotiable] {
         didSet {
-            if let data = try? JSONEncoder().encode(nonNegotiables) {
-                defaults.set(data, forKey: Keys.nonNegotiables)
-            }
+            storage.nonNegotiables = nonNegotiables
             Store.shared.syncChecklist()
             RemoteSync.shared.markLocalEdit()
         }
     }
 
     @Published var hasOnboarded: Bool {
-        didSet { defaults.set(hasOnboarded, forKey: Keys.onboarded) }
+        didSet { storage.hasOnboarded = hasOnboarded }
     }
 
     @Published var displayName: String {
-        didSet { defaults.set(displayName, forKey: Keys.displayName) }
+        didSet { storage.displayName = displayName }
     }
 
     private init() {
-        frequency = defaults.string(forKey: Keys.frequency).flatMap(Frequency.init(rawValue:)) ?? .daily
-        autoLaunch = defaults.bool(forKey: Keys.autoLaunch)
-        hasOnboarded = defaults.bool(forKey: Keys.onboarded)
-        displayName = defaults.string(forKey: Keys.displayName) ?? ""
-        motivation = defaults.string(forKey: Keys.motivation) ?? DefaultCopy.motivation
-        contractText = defaults.string(forKey: Keys.contractText) ?? Contract.defaultMarkdown
-        reflection = defaults.string(forKey: Keys.reflection) ?? ""
-        if let data = defaults.data(forKey: Keys.nonNegotiables),
-           let decoded = try? JSONDecoder().decode([NonNegotiable].self, from: data) {
-            nonNegotiables = decoded
-        } else {
-            nonNegotiables = DefaultCopy.nonNegotiables
-        }
+        frequency = storage.frequency
+        autoLaunch = storage.autoLaunch
+        hasOnboarded = storage.hasOnboarded
+        displayName = storage.displayName
+        motivation = storage.motivation
+        contractText = storage.contractText
+        reflection = storage.reflection
+        nonNegotiables = storage.nonNegotiables
+
+        if autoLaunch { LaunchAgent.migrateIfNeeded(for: frequency) }
     }
 }
 
-// MARK: - LaunchAgent integration
+// MARK: - LaunchAgent integration (macOS auto-launch)
 
 /// Installs/removes a user LaunchAgent so Force auto-launches on login and on
 /// the chosen interval. User-initiated only (toggled in onboarding/settings).
@@ -165,8 +89,14 @@ enum LaunchAgent {
             .appendingPathComponent("LaunchAgents/\(label).plist")
     }
 
-    private static var executablePath: String {
-        Bundle.main.executablePath ?? CommandLine.arguments.first ?? ""
+    // Launch via `open` so LaunchServices activates the existing app when one
+    // is already running. Executing the bare Mach-O directly spawns a second
+    // GUI process with the same bundle ID, which macOS terminates with a crash
+    // report before SingleInstance can hand off.
+    private static var programArguments: [String] {
+        let bundle = Bundle.main.bundlePath
+        if bundle.hasSuffix(".app") { return ["/usr/bin/open", bundle] }
+        return [Bundle.main.executablePath ?? CommandLine.arguments.first ?? ""]
     }
 
     static func install(for frequency: Frequency) {
@@ -176,7 +106,7 @@ enum LaunchAgent {
 
         var dict: [String: Any] = [
             "Label": label,
-            "ProgramArguments": [executablePath],
+            "ProgramArguments": programArguments,
             "RunAtLoad": true,
             "ProcessType": "Interactive",
         ]
@@ -192,6 +122,17 @@ enum LaunchAgent {
             fromPropertyList: dict, format: .xml, options: 0) else { return }
         try? data.write(to: url)
         reload(url: url)
+    }
+
+    /// Rewrites the plist if it predates the `/usr/bin/open` fix. Old installs
+    /// run the bare binary, which crashes when the app is already up.
+    static func migrateIfNeeded(for frequency: Frequency) {
+        guard let url = plistURL,
+              let data = try? Data(contentsOf: url),
+              let plist = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
+              let args = plist["ProgramArguments"] as? [String]
+        else { return }
+        if args.first != "/usr/bin/open" { install(for: frequency) }
     }
 
     static func uninstall() {

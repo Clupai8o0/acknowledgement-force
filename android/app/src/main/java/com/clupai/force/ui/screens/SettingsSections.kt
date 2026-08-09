@@ -412,7 +412,7 @@ fun EmergencyStopSection(onStop: () -> Unit) {
             "Quits immediately, even before today's acknowledgement. Force will not reopen until you launch it again.",
             style = AppType.captionMD, color = ink.mute,
         )
-        PrimaryButton("Stop Force now", { confirming = true })
+        PrimaryButton("Stop Force now") { confirming = true }
     }
     if (confirming) {
         ConfirmDialog(
@@ -485,7 +485,7 @@ private fun ConfirmDialog(
         onDismissRequest = onDismiss,
         title = { Text(title, style = AppType.headingMD, color = ink.ink) },
         text = { Text(message, style = AppType.bodyMD, color = ink.ash) },
-        confirmButton = { PrimaryButton(confirmText, onConfirm) },
+        confirmButton = { PrimaryButton(confirmText, onClick = onConfirm) },
         dismissButton = { GhostTextButton("Cancel", onDismiss, color = ink.mute) },
         containerColor = ink.base,
     )

@@ -1,6 +1,6 @@
 import { authenticate, authError } from "@/lib/auth/apiKey";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { badRequest, readJson, serverError } from "@/lib/api-utils";
+import { badRequest, LIMITS, readJson, serverError } from "@/lib/api-utils";
 
 export async function GET(req: Request) {
   const auth = await authenticate(req, "reflection:read");
@@ -27,6 +27,9 @@ export async function PUT(req: Request) {
   const body = await readJson(req);
   if (!body || typeof body.reflection !== "string") {
     return badRequest("Body must be { reflection: string }");
+  }
+  if (body.reflection.length > LIMITS.reflectionChars) {
+    return badRequest(`reflection must be at most ${LIMITS.reflectionChars} characters`);
   }
 
   const supabase = createAdminClient();

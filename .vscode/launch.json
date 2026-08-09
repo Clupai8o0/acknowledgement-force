@@ -19,6 +19,46 @@
       "target": "Force",
       "configuration": "release",
       "preLaunchTask": "swift: Build Release Force"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:force}",
+      "name": "Debug force-cli",
+      "target": "force-cli",
+      "configuration": "debug",
+      "preLaunchTask": "swift: Build Debug force-cli"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:force}",
+      "name": "Release force-cli",
+      "target": "force-cli",
+      "configuration": "release",
+      "preLaunchTask": "swift: Build Release force-cli"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:force}",
+      "name": "Debug force-desktop",
+      "target": "force-desktop",
+      "configuration": "debug",
+      "preLaunchTask": "swift: Build Debug force-desktop"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:force}",
+      "name": "Release force-desktop",
+      "target": "force-desktop",
+      "configuration": "release",
+      "preLaunchTask": "swift: Build Release force-desktop"
     }
   ]
 }

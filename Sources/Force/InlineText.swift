@@ -1,4 +1,5 @@
 import SwiftUI
+import ForceKit
 
 // Renders [Inline] runs into a single Text with bold segments.
 func inlineText(_ runs: [Inline], base: Font = Type.bodyMD, color: Color = Ink.charcoal) -> Text {
